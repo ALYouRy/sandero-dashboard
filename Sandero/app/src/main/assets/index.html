@@ -3880,7 +3880,7 @@ var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:fal
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
   carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
-  demoOff:true,updAuto:true,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
+  demoOff:true,updAuto:true,iphExtra:true,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
 if((settings.uiv||0)<2){
@@ -7816,13 +7816,45 @@ function iphTracks(L){
   if(g.length)packs.push(g.join('_')+'~'+d.join('_'));
   return packs;
 }
+/* parts[9] : éléments séparés par « _ », chacun « clé.valeurs » (base36, textes en qEnc) */
+function sb36(v){v=Math.round(v);return v<0?'-'+(-v).toString(36):v.toString(36)}
+function iphExtra(L){
+  var X=[];
+  try{
+    /* voiture : carburant, cylindrée x10, zone rouge, réservoir, correction de conso x1000, pneus, plaque */
+    X.push(['c',qEnc(settings.fuel||''),b36((settings.disp||0)*10),b36(settings.redline||0),b36(settings.tank||50),b36((fuelSt.calib||1)*1000),qEnc(rev?rev.tsize:'')].join('.'));
+    if(rev&&rev.km)X.push('o.'+b36(rev.km));
+    /* totaux sur tout l'historique : trajets, km x10, litres x100, depuis (s), temps de conduite (s) */
+    var A=trips.filter(function(r){return showDemoTrips||!r.demo}),km=0,fu=0,du=0,t0=0;
+    A.forEach(function(r){km+=r.dist;fu+=r.fuel*(fuelSt.calib||1);du+=r.dur;if(!t0||r.t0<t0)t0=r.t0});
+    if(A.length)X.push(['s',b36(A.length),b36(km*10),b36(fu*100),b36(t0/1000),b36(du)].join('.'));
+    /* voiture garée : fin du dernier trajet tracé (lat/lon x1e5, base36 signée) + heure */
+    var lastR=A.slice().sort(function(a,b){return b.t0-a.t0}).filter(function(r){var P=trkGet(r.id);return P&&P.length>1})[0];
+    if(lastR){var P=trkGet(lastR.id),e=P[P.length-1];X.push(['p',sb36(e[0]),sb36(e[1]),b36((lastR.t1||lastR.t0+lastR.dur*1000)/1000)].join('.'))}
+    /* entretien : chaque élément, avec état (0 ok, 1 bientôt, 2 dépassé, vide = date à renseigner), km restants, jours restants, nom, intervalle km, intervalle mois */
+    if(rev)rev.items.forEach(function(it){var st=revItemState(it),Ls=rev.last[it.id],days='';
+      if(it.mo>0&&Ls&&Ls.date){var due=new Date(Ls.date+'T12:00:00');due.setMonth(due.getMonth()+it.mo);days=sb36((due-new Date())/86400000)}
+      X.push(['m',it.id,({ok:'0',warn:'1',bad:'2'}[st.state]||''),st.left!=null?sb36(st.left):'',days,qEnc(it.n),b36(it.km||0),b36(it.mo||0)].join('.'))});
+    /* pneus (pression x10, profondeur x10) et freins (épaisseur x10, minimum x10) */
+    if(rev){Object.keys(rev.tires).forEach(function(k){var t=rev.tires[k];X.push(['t',k,b36((t.p||0)*10),b36((t.d||0)*10)].join('.'))});
+      Object.keys(rev.brakes).forEach(function(k){var b=rev.brakes[k];X.push(['k',k,b36((b.v||0)*10),b36((b.min||0)*10)].join('.'))})}
+    /* codes défaut avec leur explication */
+    var dOk=DTCS&&DTCS.t&&Date.now()-DTCS.t<30*864e5;
+    if(dOk)(DTCS.codes||[]).slice(0,8).forEach(function(c){X.push(['d',c,qEnc(dtcDesc(c).slice(0,90))].join('.'))});
+    /* batterie : 24 dernières mesures (heure, tension x100, moteur tournant) */
+    (batt.log||[]).slice(-24).forEach(function(l){X.push(['b',b36(l.t/1000),b36(l.v*100),l.run?'1':'0'].join('.'))});
+  }catch(e){}
+  return X.join('_');
+}
 function iphBuild(all){
   var last=0;if(!all){try{last=+localStorage.getItem(IPHSYNC)||0}catch(e){}}
   var L=trips.filter(function(r){return (showDemoTrips||!r.demo)&&r.t0>last}).sort(function(a,b){return a.t0-b.t0});
   var cal=fuelSt.calib||1,fi=fuelInfo();
   var snap=['1',qEnc(settings.carName||'La Mathias'),qEnc(settings.plateText||''),b36(settings.fuelPrice*1000),fi.rem!=null?b36(fi.rem*10):'',fi.range!=null?b36(fi.range):'',b36(settings.tank||50),b36(Date.now()/1000),fi.measured?'1':'0',(function(c){c=c||[24,42,126];return ((1<<24)+(c[0]<<16)+(c[1]<<8)+(c[2]|0)).toString(16).slice(1)})(Car.paint)].join('.');
-  var T=L.map(function(r){var st=tstat(r);return [b36(r.t0/1000),b36(r.dur),b36(r.dist*10),b36(r.fuel*cal*100),b36(r.vmax),b36(r.hard),b36(r.accel),b36(r.over),b36(r.idle||0),b36(tripScore(r)),b36((st.rpmAvg||0)/10),(favOf(r)?b36(favOf(r).id):'')].join('.')});
-  var F=(fuelSt.fills||[]).filter(function(f){return f.t>last}).map(function(f){return [b36(f.t/1000),f.litres?b36(f.litres*10):'',f.full===false?'0':'1'].join('.')});
+  var T=L.map(function(r){var st=tstat(r);return [b36(r.t0/1000),b36(r.dur),b36(r.dist*10),b36(r.fuel*cal*100),b36(r.vmax),b36(r.hard),b36(r.accel),b36(r.over),b36(r.idle||0),b36(tripScore(r)),b36((st.rpmAvg||0)/10),(favOf(r)?b36(favOf(r).id):''),
+    /* 12+ : roulage (s), arrêts, freinages, régime max/10, régime min/10, temp max, temp moy, batterie min x10, batterie moy x10, charge moteur %, prix du carburant x1000, démo */
+    b36(r.mov||0),b36(r.stops||0),b36(r.brakes||0),b36((r.rpmMax||0)/10),b36((r.rpmMin||0)/10),r.tMax?b36(r.tMax):'',st.tAvg?b36(st.tAvg):'',r.vMin?b36(r.vMin*10):'',st.vAvg?b36(st.vAvg*10):'',st.load?b36(st.load):'',b36((r.price||settings.fuelPrice)*1000),r.demo?'1':''].join('.')});
+  var F=(fuelSt.fills||[]).filter(function(f){return f.t>last}).map(function(f){return [b36(f.t/1000),f.litres?b36(f.litres*10):'',f.full===false?'0':'1',f.dist?b36(f.dist):'',f.used?b36(f.used*100):''].join('.')});
   /* santé de la voiture (1er code seulement) : batterie, codes défaut, prochain entretien, précision de la conso */
   var H='';
   try{
@@ -7830,15 +7862,19 @@ function iphBuild(all){
     if(rev)rev.items.forEach(function(it){var st=revItemState(it);if(st.left!=null&&(ns==null||st.left<ns.left)){ns={n:it.n,left:st.left,state:st.state};nsTxt=st.txt}});
     var dOk=DTCS&&DTCS.t&&Date.now()-DTCS.t<30*864e5,pr=precInfo();
     H=[bR?b36(bR.v*100):'',bU?b36(bU.v*100):'',dOk?(DTCS.codes||[]).slice(0,6).join('-'):'',dOk?b36(DTCS.t/1000):'',
-       ns?qEnc(ns.n):'',ns?({ok:'0',warn:'1',bad:'2'}[ns.state]||''):'',ns?qEnc(nsTxt):'',pr.s.charAt(0),qEnc(pr.t)].join('.');
+       ns?qEnc(ns.n):'',ns?({ok:'0',warn:'1',bad:'2'}[ns.state]||''):'',ns?qEnc(nsTxt):'',pr.s.charAt(0),qEnc(pr.t),rev&&rev.km?b36(rev.km):''].join('.');
   }catch(e){H=''}
   /* tracés GPS : codes en plus, après les codes habituels (8e champ, ignoré par les anciennes versions de l'appli iPhone) */
   var G=settings.iphTracks===false?[]:iphTracks(L);
-  var per=12,n=Math.max(1,Math.ceil(T.length/per)),pages=[],tot=n+G.length;
+  var X=settings.iphExtra===false?'':iphExtra(L);
+  var per=10,n=Math.max(1,Math.ceil(T.length/per)),pages=[],tot=n+(X?1:0)+G.length;
   for(var i=0;i<n;i++){
     pages.push('v1~'+snap+'~'+(i+1)+'-'+tot+'~'+T.slice(i*per,(i+1)*per).join('_')+'~'+(i===0?F.slice(-20).join('_'):'')+'~'+(i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):'')+'~'+(i===0?H:''));
   }
-  G.forEach(function(g,k){pages.push('v1~'+snap+'~'+(n+k+1)+'-'+tot+'~~~~~'+g)});
+  /* 10e champ (parts[9]) : toutes les autres infos de la voiture, sur un code à part */
+  if(X)pages.push('v1~'+snap+'~'+(n+1)+'-'+tot+'~~~~~~~'+X);
+  var o=X?1:0;
+  G.forEach(function(g,k){pages.push('v1~'+snap+'~'+(n+o+k+1)+'-'+tot+'~~~~~'+g)});
   iph.nTrk=G.length;iph.pages=pages;iph.i=0;iph.all=all;iph.maxT=L.length?L[L.length-1].t0:0;iph.count=L.length;
 }
 function iphDraw(){
@@ -8039,6 +8075,7 @@ var SCHEMA=[
   {k:'gpsTrack',l:'Tracé GPS des trajets',h:'Pour revoir sur une carte par où tu es passée.',type:'seg',o:boolOpts()},
   {k:'mapStyle',l:'Style de la carte',type:'seg',o:[['neon','Néon'],['sombre','Sombre'],['or','Doré'],['clair','Clair']]},
   {k:'mapEngine',l:'Fond de carte',h:'« Simple » utilise des images : moins joli, mais plus léger pour l’autoradio et sans WebGL.',type:'seg',o:[['auto','Détaillé'],['raster','Simple']]},
+  {k:'iphExtra',l:'Envoyer toutes les infos de la voiture',h:'Un code en plus : entretien complet, pneus, freins, kilométrage, voiture garée, codes défaut expliqués, historique de la batterie.',type:'seg',o:boolOpts()},
   {k:'iphTracks',l:'Envoyer les tracés à l’iPhone',h:'Ajoute des codes QR en plus pour les tracés (les 20 derniers trajets envoyés au maximum).',type:'seg',o:boolOpts()},
   {k:'fuelPrice',l:'Prix du carburant (€/L)',type:'num',min:0.5,max:4,step:0.01}
  ]},
