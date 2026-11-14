@@ -19,7 +19,7 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Sandero Dashboard"
+        android:label="La Mathias"
         android:hardwareAccelerated="true"
         android:theme="@style/AppTheme">
 
@@ -55,7 +55,7 @@
         <service
             android:name=".MediaListener"
             android:exported="true"
-            android:label="Sandero Dashboard"
+            android:label="La Mathias"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />

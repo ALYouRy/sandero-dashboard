@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Tableau de bord Sandero</title>
+<title>La Mathias</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: dock vertical à gauche (écran de voiture en paysage), jauge de vitesse/régime à gauche, tuiles capteurs à droite.
@@ -1019,7 +1019,7 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
       <div class="top-l">
         <button type="button" class="back-btn" id="back-btn" aria-label="Retour" hidden><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M17 6l-8 8 8 8"/></svg><span>Retour</span></button>
         <div>
-        <h1>Sandero</h1>
+        <h1>La Mathias</h1>
         <div class="sub">Dacia Sandero 2009 · 1.2 16v · OBD-II</div>
         </div>
       </div>
@@ -1048,7 +1048,7 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
             <div class="hm-ring"></div>
             <div id="hm-stage" class="hm-stage"></div>
             <div class="hm-no3d"><svg viewBox="0 0 28 28"><path d="M3.500 19v-4.200l2.400-4.800h10.400l4.200 4.800h4v4.200"/><circle cx="9" cy="19.500" r="2.200"/><circle cx="19.500" cy="19.500" r="2.200"/></svg></div>
-            <div class="hm-title"><b id="hm-name">Sandero</b><span><i id="hm-dot"></i><em id="hm-state">–</em></span><button type="button" class="hm-btc" id="hm-btc" data-c="" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M10.5 18.5h3"/></svg><em id="hm-btc-t"></em></button></div>
+            <div class="hm-title"><b id="hm-name">La Mathias</b><span><i id="hm-dot"></i><em id="hm-state">–</em></span><button type="button" class="hm-btc" id="hm-btc" data-c="" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M10.5 18.5h3"/></svg><em id="hm-btc-t"></em></button></div>
             <button type="button" class="hm-veh" data-go="car"><svg viewBox="0 0 28 28"><path d="M3.500 19v-4.200l2.400-4.800h10.400l4.200 4.800h4v4.200"/><circle cx="9" cy="19.500" r="2.200"/><circle cx="19.500" cy="19.500" r="2.200"/></svg>Véhicule</button>
           </div>
           <div class="hm-bt">
@@ -1419,7 +1419,7 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
             <button type="button" data-v="obd" aria-pressed="false">Adaptateur OBD-II</button>
           </span>
         </div>
-        <p class="msg" id="conn-msg">Branche l’adaptateur sur la prise OBD de la Sandero (sous le volant), mets le contact, puis choisis « Adaptateur OBD-II ». L’adaptateur doit être en Bluetooth LE (4.0). Les ELM327 en Bluetooth classique ne sont pas visibles depuis un navigateur.</p>
+        <p class="msg" id="conn-msg">Branche l’adaptateur sur la prise OBD de la voiture (sous le volant), mets le contact, puis choisis « Adaptateur OBD-II ». L’adaptateur doit être en Bluetooth LE (4.0). Les ELM327 en Bluetooth classique ne sont pas visibles depuis un navigateur.</p>
       </div>
 
       <div class="card">
@@ -1436,7 +1436,7 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
     <div class="qr-body">
       <div class="qr-box"><canvas id="qr-cv" width="360" height="360"></canvas><div class="qr-empty" id="qr-empty" hidden></div></div>
       <div class="qr-side">
-        <p class="qr-step">Dans l’appli <b>Sandero</b> de ton iPhone, touche <b>Scanner</b> et vise ce code.</p>
+        <p class="qr-step">Dans l’appli <b>La Mathias</b> de ton iPhone, touche <b>Scanner</b> et vise ce code.</p>
         <div class="qr-pg" id="qr-pg"><button type="button" class="btn ghost" id="qr-prev">‹</button><b id="qr-n">1 / 1</b><button type="button" class="btn ghost" id="qr-next">›</button></div>
         <p class="msg" id="qr-info"></p>
         <div class="ri-b"><button type="button" class="btn" id="qr-done">J’ai tout scanné</button><button type="button" class="btn ghost" id="qr-all">Tout renvoyer</button></div>
@@ -3748,12 +3748,12 @@ var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelect
 var clamp=function(v,a,b){return Math.min(b,Math.max(a,v))};
 
 /* ---------- Réglages ---------- */
-var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:false,uiv:7,autoPerf:true,aa:false,uiTheme:'neon',iphoneUrl:'',showPhone:true,plates:true,plateText:'AD-327-EW',plateDept:'13',fontStyle:'system',numSize:'m',density:'normal',dockPos:'left',dockLabels:true,driveLayout:'split',gaugeStyle:'arc',homeLayout:'classic',
+var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:false,uiv:7,autoPerf:true,aa:false,uiTheme:'neon',iphoneUrl:'https://alyoury.github.io/la-mathias/',showPhone:true,plates:true,plateText:'AD-327-EW',plateDept:'13',fontStyle:'system',numSize:'m',density:'normal',dockPos:'left',dockLabels:true,driveLayout:'split',gaugeStyle:'arc',homeLayout:'classic',
   accent:'#00e5ff',bg:'neon',cardStyle:'studio',radius:'m',zoom:100,anim:true,dim:0,clock24:true,wake:true,
   scale:100,fps:60,mirror:true,plat:true,glow:true,uiRefresh:200,home3d:true,force2d:false,showFps:false,
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
-  carName:'Sandero',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
+  carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
   demoOff:true,autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
@@ -6508,7 +6508,7 @@ function islandTick(force){
   }else if(mode2==='event'){
     T.textContent=(st.i?st.i+'  ':'')+st.t;R.textContent='';D.style.background='';
   }else{
-    T.textContent=settings.carName||'Sandero';R.textContent=hm;D.style.background='';
+    T.textContent=settings.carName||'La Mathias';R.textContent=hm;D.style.background='';
     var g=function(id,v){var e=$('#'+id);if(e)e.textContent=v};
     g('ig-sp',sp!=null?Math.round(sp)+' km/h':'–');
     g('ig-rpm',data.rpm!=null?Math.round(data.rpm/10)*10:'–');
@@ -7192,12 +7192,21 @@ function iphBuild(all){
   var last=0;if(!all){try{last=+localStorage.getItem(IPHSYNC)||0}catch(e){}}
   var L=trips.filter(function(r){return (showDemoTrips||!r.demo)&&r.t0>last}).sort(function(a,b){return a.t0-b.t0});
   var cal=fuelSt.calib||1,fi=fuelInfo();
-  var snap=['1',qEnc(settings.carName||'Sandero'),qEnc(settings.plateText||''),b36(settings.fuelPrice*1000),fi.rem!=null?b36(fi.rem*10):'',fi.range!=null?b36(fi.range):'',b36(settings.tank||50),b36(Date.now()/1000),fi.measured?'1':'0',(function(c){c=c||[24,42,126];return ((1<<24)+(c[0]<<16)+(c[1]<<8)+(c[2]|0)).toString(16).slice(1)})(Car.paint)].join('.');
+  var snap=['1',qEnc(settings.carName||'La Mathias'),qEnc(settings.plateText||''),b36(settings.fuelPrice*1000),fi.rem!=null?b36(fi.rem*10):'',fi.range!=null?b36(fi.range):'',b36(settings.tank||50),b36(Date.now()/1000),fi.measured?'1':'0',(function(c){c=c||[24,42,126];return ((1<<24)+(c[0]<<16)+(c[1]<<8)+(c[2]|0)).toString(16).slice(1)})(Car.paint)].join('.');
   var T=L.map(function(r){var st=tstat(r);return [b36(r.t0/1000),b36(r.dur),b36(r.dist*10),b36(r.fuel*cal*100),b36(r.vmax),b36(r.hard),b36(r.accel),b36(r.over),b36(r.idle||0),b36(tripScore(r)),b36((st.rpmAvg||0)/10),(favOf(r)?b36(favOf(r).id):'')].join('.')});
   var F=(fuelSt.fills||[]).filter(function(f){return f.t>last}).map(function(f){return [b36(f.t/1000),f.litres?b36(f.litres*10):'',f.full===false?'0':'1'].join('.')});
+  /* santé de la voiture (1er code seulement) : batterie, codes défaut, prochain entretien, précision de la conso */
+  var H='';
+  try{
+    var bR=batt.rest,bU=batt.run,ns=null,nsTxt='';
+    if(rev)rev.items.forEach(function(it){var st=revItemState(it);if(st.left!=null&&(ns==null||st.left<ns.left)){ns={n:it.n,left:st.left,state:st.state};nsTxt=st.txt}});
+    var dOk=DTCS&&DTCS.t&&Date.now()-DTCS.t<30*864e5,pr=precInfo();
+    H=[bR?b36(bR.v*100):'',bU?b36(bU.v*100):'',dOk?(DTCS.codes||[]).slice(0,6).join('-'):'',dOk?b36(DTCS.t/1000):'',
+       ns?qEnc(ns.n):'',ns?({ok:'0',warn:'1',bad:'2'}[ns.state]||''):'',ns?qEnc(nsTxt):'',pr.s.charAt(0),qEnc(pr.t)].join('.');
+  }catch(e){H=''}
   var per=12,n=Math.max(1,Math.ceil(T.length/per)),pages=[];
   for(var i=0;i<n;i++){
-    pages.push('v1~'+snap+'~'+(i+1)+'-'+n+'~'+T.slice(i*per,(i+1)*per).join('_')+'~'+(i===0?F.slice(-20).join('_'):'')+'~'+(i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):''));
+    pages.push('v1~'+snap+'~'+(i+1)+'-'+n+'~'+T.slice(i*per,(i+1)*per).join('_')+'~'+(i===0?F.slice(-20).join('_'):'')+'~'+(i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):'')+'~'+(i===0?H:''));
   }
   iph.pages=pages;iph.i=0;iph.all=all;iph.maxT=L.length?L[L.length-1].t0:0;iph.count=L.length;
 }
@@ -7343,7 +7352,7 @@ var SCHEMA=[
  ]},
  {col:'B',t:'Voiture et alertes',items:[
   {k:'carName',l:'Nom affiché',type:'text'},
-  {k:'iphoneUrl',l:'Adresse de l’appli iPhone',h:'Ton adresse GitHub Pages, par exemple https://pseudo.github.io/sandero-iphone/',type:'text'},
+  {k:'iphoneUrl',l:'Adresse de l’appli iPhone',h:'Déjà réglée sur https://alyoury.github.io/la-mathias/',type:'text'},
   {k:'showPhone',l:'Indicateur du téléphone Bluetooth',h:'En haut de l’écran et sur l’accueil.',type:'seg',o:boolOpts('Affiché','Masqué')},
   {k:'plates',l:'Plaques d’immatriculation sur la 3D',type:'seg',o:boolOpts('Affichées','Masquées')},
   {k:'plateText',l:'Immatriculation',h:'Format AA-123-AA.',type:'text'},
@@ -7617,7 +7626,7 @@ function applyAll(){
   else if(typeof PAINTS!=='undefined'&&PAINTS[settings.paint])Car.paint=PAINTS[settings.paint][1];
   syncPaint&&syncPaint();
   /* texte de l'accueil */
-  var nm=$('#hm-name');if(nm)nm.textContent=settings.carName||'Sandero';
+  var nm=$('#hm-name');if(nm)nm.textContent=settings.carName||'La Mathias';
   var sb=$('.top .sub');if(sb)sb.textContent=settings.carSub||'Dacia Sandero 2009 · 1.2 16v · OBD-II';
   /* raccourcis applications */
   var pk={nav:settings.pkgNav,music:settings.pkgBtMusic||settings.pkgMusic,phone:settings.pkgPhone};
@@ -8031,6 +8040,8 @@ function ecoApply(){
   else{try{tickClock();render();pollMedia();pollPhone()}catch(e){}if(typeof showView==='function'&&(currentView==='car'||currentView==='home'))try{carStart()}catch(e){}}
 }
 window.onAppVisible=function(v){var b=!v;if(b===ECO.bg)return;ECO.bg=b;ecoApply();if(!b&&tsPending){var p=tsPending;tsPending=null;if(Date.now()-p.t<30*60000)setTimeout(function(){tsShow(p.r)},600)}};
+if(!String(settings.iphoneUrl||'').trim()){settings.iphoneUrl='https://alyoury.github.io/la-mathias/';saveSettings()}
+if(!settings.nameMig){settings.nameMig=1;if(!settings.carName||settings.carName==='Sandero'){settings.carName='La Mathias'}saveSettings();applyAll()}
 devSetup();
 devProfile();
 if(autoPossible()){setMode('idle');setTx('conn-msg','Connexion automatique au dernier adaptateur utilisé…');autoSchedule(1500)}
