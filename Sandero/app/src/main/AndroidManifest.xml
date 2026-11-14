@@ -12,6 +12,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
@@ -43,6 +44,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!-- Mise à jour par internet : donne l'APK téléchargé à l'installeur Android -->
+        <provider
+            android:name=".ApkProvider"
+            android:authorities="fr.sandero.dashboard.apk"
+            android:exported="false"
+            android:grantUriPermissions="true" />
         <receiver
             android:name=".BootReceiver"
             android:exported="true">

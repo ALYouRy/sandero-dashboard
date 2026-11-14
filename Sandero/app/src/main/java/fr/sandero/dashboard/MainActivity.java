@@ -262,6 +262,26 @@ public class MainActivity extends Activity {
     }
 
     private class AppApi {
+        /* ---- mise à jour par internet ---- */
+        @JavascriptInterface
+        public int appVersion() {
+            try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode; } catch (Exception e) { return 0; }
+        }
+        @JavascriptInterface
+        public String appVersionName() {
+            try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return ""; }
+        }
+        @JavascriptInterface
+        public void updateCheck(String url) { Updater.check(MainActivity.this, web, url); }
+        @JavascriptInterface
+        public void updateGet(String url) { Updater.download(MainActivity.this, web, url); }
+        @JavascriptInterface
+        public void updateInstall() { runOnUiThread(() -> Updater.install(MainActivity.this, web)); }
+        @JavascriptInterface
+        public boolean updateCanInstall() {
+            return android.os.Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls();
+        }
+
         /* ---- caractéristiques de l'autoradio (pour régler automatiquement les performances) ---- */
         @JavascriptInterface
         public String deviceInfo() {
