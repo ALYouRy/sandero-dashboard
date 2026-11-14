@@ -680,7 +680,8 @@ body.ui-neon .dock button[aria-current="page"]{box-shadow:0 0 18px rgba(var(--ac
    ===================================================================== */
 body.ui-neon{--bg:#07051a;--surface:#0e0b22;--surface-2:#16123a;--line:rgba(170,130,255,.20);--fg:#f2efff;--fg-2:#a9a1d6;--fg-3:#7d74b0;
   --good:#34d17a;--warn:#ffb020;--bad:#ff4d4f;--track:rgba(255,255,255,.08);--pink:#ff3fd0;
-  --glow:radial-gradient(910px 650px at 10% -10%,rgba(255,0,170,.16),transparent 60%),radial-gradient(780px 650px at 100% 100%,rgba(0,229,255,.10),transparent 60%);
+  --g1:255,0,170;--g2:0,229,255;
+  --glow:radial-gradient(910px 650px at 10% -10%,rgba(var(--g1),.16),transparent 60%),radial-gradient(780px 650px at 100% 100%,rgba(var(--g2),.10),transparent 60%);
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif}
 body.ui-neon .card,body.ui-neon .tile,body.ui-neon .coach>div{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:0 0 0 1px rgba(var(--accent-rgb),.06),0 0 22px rgba(var(--accent-rgb),.06)}
 body.ui-neon .card h2,body.ui-neon .t-label{font-size:14px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#c6a8ff}
@@ -813,6 +814,13 @@ body.num-l .co-shift b,body.num-xl .co-shift b{font-size:21px}
   body.hm-flip .hm-mid{order:3}
 }
 /* Choix du thème */
+.set-sub{margin:14px 0 2px}.set-sub b{display:block;font-size:16px}.set-sub small{display:block;color:var(--fg-3);font-size:13px;margin-top:2px}
+.set-harm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 0 6px}
+.set-harm button{display:flex;align-items:center;gap:12px;text-align:left;padding:10px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg);min-height:64px}
+.set-harm button[aria-pressed="true"]{border-color:rgba(var(--accent-rgb),.8);box-shadow:0 0 0 1px rgba(var(--accent-rgb),.5),0 0 18px rgba(var(--accent-rgb),.25)}
+.set-harm i{position:relative;flex:0 0 auto;width:46px;height:46px;border-radius:13px;border:1px solid rgba(255,255,255,.1)}
+.set-harm i em{position:absolute;right:6px;bottom:6px;width:12px;height:12px;border-radius:50%}
+.set-harm b{display:block;font-size:15px}.set-harm small{display:block;font-size:12px;color:var(--fg-3);margin-top:1px}
 .set-theme{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 0 6px}
 .set-theme button{display:flex;align-items:center;gap:12px;padding:10px 12px;text-align:left;border-radius:16px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font:inherit}
 .set-theme button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
@@ -3901,7 +3909,7 @@ var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:fal
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
   carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
-  demoOff:true,updAuto:true,tripMerge:5,iphExtra:true,iphAuto:true,iphZip:false,iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
+  demoOff:true,updAuto:true,tripMerge:5,harmony:'neon',iphExtra:true,iphAuto:true,iphZip:false,iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
 if((settings.uiv||0)<2){
@@ -8095,6 +8103,37 @@ var BGS={
   mint:['Menthe','#3ae0b0','#2a86d0','#0a3a30','#041712'],
   steel:['Acier','#6a7e9a','#4a5a78','#1a2230','#0a0e16']
 };
+/* Harmonies de couleurs (thème Néon) : fond, lueurs, accent, LED du plateau et style de carte qui vont ensemble */
+var HARMS=[
+  {k:'neon',n:'Néon',d:'Cyan et rose, l’original',acc:'#00e5ff',g1:'255,0,170',g2:'0,229,255',bg:'neon',led:'cyan',map:'neon'},
+  {k:'synth',n:'Synthwave',d:'Coucher de soleil rétro',acc:'#ff3fd0',g1:'255,120,40',g2:'150,60,255',bg:'sunset',led:'purple',map:'neon'},
+  {k:'ocean',n:'Océan',d:'Bleu profond et turquoise',acc:'#3ad6ff',g1:'40,110,255',g2:'0,210,190',bg:'ocean',led:'cyan',map:'sombre'},
+  {k:'aurore',n:'Aurore boréale',d:'Vert polaire et violet',acc:'#34d17a',g1:'120,80,255',g2:'20,220,150',bg:'aurora',led:'green',map:'neon'},
+  {k:'lavande',n:'Lavande',d:'Violet doux et rose',acc:'#c4a1ff',g1:'255,110,200',g2:'150,100,255',bg:'violet',led:'purple',map:'neon'},
+  {k:'braise',n:'Braise',d:'Rouge et ambre',acc:'#ff6a3c',g1:'255,50,40',g2:'255,160,0',bg:'red',led:'orange',map:'or'},
+  {k:'or',n:'Or de nuit',d:'Doré sur bleu nuit',acc:'#ffc46b',g1:'255,170,60',g2:'40,90,200',bg:'gold',led:'orange',map:'or'},
+  {k:'glacier',n:'Glacier',d:'Bleu glacé et blanc',acc:'#9fd8ff',g1:'120,180,255',g2:'220,235,255',bg:'ice',led:'white',map:'sombre'},
+  {k:'menthe',n:'Menthe',d:'Vert d’eau et bleu',acc:'#3ae0b0',g1:'0,190,170',g2:'60,140,255',bg:'mint',led:'green',map:'sombre'},
+  {k:'minuit',n:'Minuit',d:'Presque noir, très discret',acc:'#a9a1d6',g1:'90,70,160',g2:'40,60,120',bg:'amoled',led:'purple',map:'sombre'}
+];
+function harmBlock(){
+  var d=document.createElement('div');d.className='set-harm';
+  HARMS.forEach(function(h){
+    var b=document.createElement('button');b.type='button';b.setAttribute('data-hm',h.k);
+    b.innerHTML='<i></i><span><b></b><small></small></span>';
+    $('i',b).style.background='radial-gradient(60px 50px at 20% 10%,rgba('+h.g1+',.75),transparent 70%),radial-gradient(60px 50px at 90% 100%,rgba('+h.g2+',.6),transparent 70%),#07051a';
+    $('i',b).innerHTML='<em style="background:'+h.acc+';box-shadow:0 0 10px '+h.acc+'"></em>';
+    $('b',b).textContent=h.n;$('small',b).textContent=h.d;
+    b.setAttribute('aria-pressed',(settings.harmony||'neon')===h.k?'true':'false');
+    b.addEventListener('click',function(){
+      settings.harmony=h.k;settings.uiTheme='neon';settings.theme='dark';settings.accent=h.acc;settings.bg=h.bg;settings.ledColor=h.led;settings.mapStyle=h.map;
+      saveSettings();applyAll();try{if(typeof ledApply==='function')ledApply()}catch(e){}refreshSettingsUI();
+      Array.prototype.forEach.call(d.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+    });
+    d.appendChild(b);
+  });
+  return d;
+}
 var THEMES=[
   {k:'studio',n:'Studio',d:'Sombre, net, mat',acc:'#0a84ff',bg:'studio',th:'dark',pv:'linear-gradient(135deg,#0a84ff 0 22%,#0f1217 22%)'},
   {k:'neon',n:'Néon',d:'Lueurs cyan et magenta',acc:'#00e5ff',bg:'neon',th:'dark',pv:'linear-gradient(135deg,#ff2bd6,#00e5ff)'},
@@ -8128,6 +8167,7 @@ function boolOpts(a,b){return [[true,a||'Oui'],[false,b||'Non']]}
 var SCHEMA=[
  {col:'A',t:'Style et disposition',items:[
   {type:'themes'},
+  {type:'harms'},
   {k:'fontStyle',l:'Police',type:'seg',o:[['system','Standard'],['cond','Condensée'],['mono','Technique'],['serif','Élégante']]},
   {k:'numSize',l:'Taille des chiffres',h:'Plus gros = plus lisible d’un coup d’œil en roulant.',type:'seg',o:[['m','Normale'],['l','Grande'],['xl','Très grande']]},
   {k:'density',l:'Espacement',type:'seg',o:[['compact','Compact'],['normal','Normal'],['airy','Aéré']]},
@@ -8385,6 +8425,7 @@ function buildSettings(){
     g.items.forEach(function(it){
       if(it.type==='presets')card.appendChild(presetsBlock());
       else if(it.type==='themes')card.appendChild(themeBlock());
+      else if(it.type==='harms'){var hh=document.createElement('p');hh.className='set-sub';hh.innerHTML='<b>Harmonie de couleurs</b><small>Pour le thème Néon : fond, lueurs, couleur d’accent, LED du plateau et carte assortis.</small>';card.appendChild(hh);card.appendChild(harmBlock())}
       else if(it.type==='glasspre')card.appendChild(glassBlock());
       else if(it.type==='devinfo'){var di=document.createElement('p');di.className='msg';di.id='dev-info';di.style.padding='0 0 10px';di.textContent='Autoradio : '+devText();card.appendChild(di)}
       else if(it.type==='upd'){var ub=document.createElement('div');ub.id='upd-box';card.appendChild(ub);setTimeout(updUI,0)}
@@ -8445,6 +8486,8 @@ function applyAll(){
     ['--lg-fill','--lg-hl','--lg-blobs'].forEach(function(k){r.style.removeProperty(k)});
   }
   THEMES.forEach(function(t){b.classList.toggle('ui-'+t.k,settings.uiTheme===t.k)});
+  var HM=null;HARMS.forEach(function(h){if(h.k===(settings.harmony||'neon'))HM=h});
+  if(HM&&settings.uiTheme==='neon'){b.style.setProperty('--g1',HM.g1);b.style.setProperty('--g2',HM.g2)}else{b.style.removeProperty('--g1');b.style.removeProperty('--g2')}
   ['cond','mono','serif'].forEach(function(f){b.classList.toggle('font-'+f,settings.fontStyle===f)});
   b.classList.toggle('num-l',settings.numSize==='l');b.classList.toggle('num-xl',settings.numSize==='xl');
   b.classList.toggle('dens-compact',settings.density==='compact');b.classList.toggle('dens-airy',settings.density==='airy');
