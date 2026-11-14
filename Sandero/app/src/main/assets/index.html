@@ -309,7 +309,7 @@ body.is-home main{padding:6px 0;overflow:hidden}
 .hm-title em{font-style:normal}
 .hm-veh{position:absolute;right:20px;top:18px;display:flex;align-items:center;border:0;background:transparent;color:#fff;font-size:17px;font-weight:700}
 .hm-veh svg{width:22px;height:22px;margin-right:7px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hm-bt{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;flex:0 0 auto}
+.hm-bt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;flex:0 0 auto}
 .hm-b{display:flex;align-items:center;padding:12px 14px;min-height:74px;text-align:left;border-radius:22px;min-width:0}
 .hm-b svg{flex:0 0 auto;width:26px;height:26px;margin-right:12px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .hm-b b{display:block;font-size:17px;font-weight:700}
@@ -847,6 +847,17 @@ body.panel main{padding:0;overflow:hidden}
 .split-fake small{display:block;margin:8px 0 18px;font-size:14px;color:rgba(207,230,255,.65)}
 body.panel-preview{padding-left:calc(62% + 8px)}
 /* Envoi vers l'iPhone (QR code) */
+.mp-modal{position:fixed;top:0;right:0;bottom:0;left:0;z-index:61;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(0,0,0,.65)}
+.mp-p{position:relative;width:min(1180px,100%);height:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:24px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.mp-p canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+.mp-top{position:absolute;left:14px;right:14px;top:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}
+.mp-top>*{pointer-events:auto}
+.mp-t{background:rgba(10,10,20,.82);border:1px solid var(--line-2);border-radius:16px;padding:9px 14px}
+.mp-t b{display:block;font-size:16px}.mp-t small{color:var(--fg-2);font-size:13px}
+.mp-z{position:absolute;right:14px;bottom:40px;display:flex;flex-direction:column;gap:8px}
+.mp-z button,.mp-x{width:48px;height:48px;border-radius:14px;background:rgba(10,10,20,.82);border:1px solid var(--line-2);color:var(--fg);font-size:24px;font-weight:600}
+.mp-at{position:absolute;left:10px;bottom:6px;font-size:10.5px;color:rgba(255,255,255,.55)}
+.mp-msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:440px;text-align:center;color:var(--fg-2);font-size:15px;line-height:1.5}
 .qr-modal{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.6)}
 .qr-p{width:min(860px,100%);max-height:100%;overflow:auto;background:var(--surface);border:1px solid var(--line-2);border-radius:24px;padding:16px 20px 20px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .qr-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -1055,6 +1066,7 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
             <button type="button" class="gl hm-b" data-go="cons"><svg viewBox="0 0 28 28"><path d="M14 4.5S7 12.5 7 17.5a7 7 0 0 0 14 0c0-5-7-13-7-13z"/></svg><span><b>Autonomie</b><small id="hm-op">–</small></span></button>
             <button type="button" class="gl hm-b" data-go="revision"><svg viewBox="0 0 28 28"><path d="M19.500 5a5 5 0 0 0-5.200 6.600L5 20.900 7.100 23l9.300-9.300A5 5 0 0 0 23 8.500l-3 3-2.500-.5-.5-2.500 3-3z"/></svg><span><b>Entretien</b><small id="hm-ent">–</small></span></button>
             <button type="button" class="gl hm-b" data-go="trips"><svg viewBox="0 0 28 28"><circle cx="7" cy="21" r="2.500"/><circle cx="21" cy="7" r="2.500"/><path d="M9 21h8a4 4 0 0 0 0-8h-6a4 4 0 0 1 0-8h8"/></svg><span><b>Trajets</b><small id="hm-tp">–</small></span></button>
+            <button type="button" class="gl hm-b" id="hm-iph"><svg viewBox="0 0 28 28"><rect x="8" y="3" width="12" height="22" rx="3"/><path d="M12.500 21.500h3"/></svg><span><b>iPhone</b><small id="hm-iphs">–</small></span></button>
           </div>
         </div>
         <div class="hm-rcol">
@@ -1430,6 +1442,14 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
   </main>
 </div>
 
+<div class="mp-modal" id="mp-modal" hidden>
+  <div class="mp-p"><canvas id="mp-cv"></canvas>
+    <div class="mp-top"><div class="mp-t"><b id="mp-ti">Trajet</b><small id="mp-su"></small></div><button type="button" class="mp-x" id="mp-close" aria-label="Fermer">✕</button></div>
+    <div class="mp-z"><button type="button" id="mp-in" aria-label="Zoomer">+</button><button type="button" id="mp-out" aria-label="Dézoomer">−</button><button type="button" id="mp-fit" aria-label="Recentrer" style="font-size:18px">⤢</button></div>
+    <div class="mp-msg" id="mp-msg" hidden></div>
+    <div class="mp-at">© OpenStreetMap · © CARTO</div>
+  </div>
+</div>
 <div class="qr-modal" id="qr-modal" hidden>
   <div class="qr-p">
     <div class="qr-h"><b>Envoyer vers l’iPhone</b><button type="button" class="link" id="qr-close" aria-label="Fermer">✕</button></div>
@@ -3754,7 +3774,7 @@ var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:fal
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
   carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
-  demoOff:true,autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
+  demoOff:true,gpsTrack:true,iphTracks:true,autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
 if((settings.uiv||0)<2){
@@ -6725,6 +6745,7 @@ function recTick(dt){
   rec.spc+=dt;rec.spa+=s;rec.spn++;
   if(rec.spc>=rec.spi){rec.sp.push(Math.round(rec.spa/rec.spn));rec.spc=0;rec.spa=0;rec.spn=0;
     if(rec.sp.length>240){rec.sp=rec.sp.filter(function(_,i){return i%2===0});rec.spi*=2}}
+  if(settings.gpsTrack!==false)trkTick(dt,s);
   rec._p+=dt;if(rec._p>=15){rec._p=0;persistActive()}
   if(rec.stop>=settings.tripEnd*60)endTrip();
 }
@@ -6735,13 +6756,15 @@ function endTrip(){
   finalizeTrip(r,false);
 }
 function finalizeTrip(r,recovered){
-  ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off','_g'].forEach(function(k){delete r[k]});
+  ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off','_g','_gt','_dm'].forEach(function(k){delete r[k]});
+  var trk=r.trk;delete r.trk;
   if(r.rpmMin===99999)r.rpmMin=0;
   if(r.vMin===99)r.vMin=0;
   if(r.dist<0.2||r.dur<30)return false;
   r.price=settings.fuelPrice;
   if(!recovered&&!r.b)r.b=geoNow();
   trips.unshift(r);if(trips.length>500)trips.length=500;
+  if(trk&&trk.length>=2)trkSave(r.id,trk);
   var fv=favOf(r);if(fv){r.fav=fv.id;if(!fv.a&&r.a&&r.b){fv.a=r.a;fv.b=r.b;favSave()}}
   tripsSave();
   if(settings.islandAuto){
@@ -6753,6 +6776,114 @@ function finalizeTrip(r,recovered){
   if(!recovered&&!r.demo){revAddKm(r.dist);setTimeout(function(){bkAuto(10*60000)},3000)}
   if(!recovered&&(!r.demo||currentView!=='car'))setTimeout(function(){tsShow(r)},400);
   return true;
+}
+/* ---------- Tracé GPS et carte ---------- */
+var TRKKEY='sandero-tracks-1',TRK=null;
+function trkAll(){if(!TRK){try{TRK=JSON.parse(localStorage.getItem(TRKKEY)||'{}')}catch(e){TRK={}}if(!TRK||typeof TRK!=='object')TRK={}}return TRK}
+function trkEnc(a){var o=[],pl=0,pn=0;a.forEach(function(p){o.push(p[0]-pl,p[1]-pn);pl=p[0];pn=p[1]});return o.join(',')}
+function trkDec(t){var v=String(t||'').split(','),a=[],l=0,n=0;for(var i=0;i+1<v.length;i+=2){l+=+v[i];n+=+v[i+1];a.push([l,n])}return a}
+function trkSave(id,a){var T=trkAll();T[id]=trkEnc(a);var k=Object.keys(T).sort(function(x,y){return +y-+x});k.slice(120).forEach(function(x){delete T[x]});
+  for(var i=0;i<6;i++){try{localStorage.setItem(TRKKEY,JSON.stringify(T));return}catch(e){k=Object.keys(T).sort(function(x,y){return +x-+y});if(k.length<=1)return;k.slice(0,Math.ceil(k.length/4)).forEach(function(x){delete T[x]})}}}
+function trkDel(id){var T=trkAll();if(T[id]!=null){delete T[id];try{localStorage.setItem(TRKKEY,JSON.stringify(T))}catch(e){}}}
+function trkGet(id){var T=trkAll();return T[id]!=null?trkDec(T[id]):null}
+function geoDist(a,b){var r=Math.PI/180,x=(b[1]-a[1])*1e-5*r*Math.cos((a[0]+b[0])/2*1e-5*r),y=(b[0]-a[0])*1e-5*r;return Math.sqrt(x*x+y*y)*6371000}
+function trkTick(dt,s){
+  rec._gt=(rec._gt||0)+dt;if(rec._gt<3)return;var el=rec._gt;rec._gt=0;
+  var p=null;
+  if(rec.demo){
+    var dm=rec._dm||(rec._dm={lat:43.2965,lon:5.3698,h:Math.random()*6.28});
+    dm.h+=(Math.random()-.5)*.5;var m=s*el/3.6;dm.lat+=m*Math.cos(dm.h)/111320;dm.lon+=m*Math.sin(dm.h)/(111320*Math.cos(dm.lat*Math.PI/180));
+    p=[Math.round(dm.lat*1e5),Math.round(dm.lon*1e5)];
+  }else{var g=geoState();if(g&&g.ok&&g.age<=10&&g.acc<=60)p=[Math.round(g.lat*1e5),Math.round(g.lon*1e5)]}
+  if(!p)return;
+  var t=rec.trk||(rec.trk=[]),q=t[t.length-1];
+  if(q&&geoDist(q,p)<18)return;
+  t.push(p);
+  if(t.length>2400)rec.trk=t.filter(function(_,i){return i%2===0||i===t.length-1});
+}
+var MP={r:null,pts:null,z:14,cx:0,cy:0,tiles:{},drag:null};
+function mpLon2x(l,z){return (l+180)/360*256*Math.pow(2,z)}
+function mpLat2y(a,z){var s=Math.sin(a*Math.PI/180);return (0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*256*Math.pow(2,z)}
+function mpFit(){
+  var cv=$('#mp-cv'),W=cv.clientWidth,H=cv.clientHeight,P=MP.pts;if(!P||!P.length)return;
+  var la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;P.forEach(function(p){var a=p[0]/1e5,o=p[1]/1e5;if(a<la0)la0=a;if(a>la1)la1=a;if(o<lo0)lo0=o;if(o>lo1)lo1=o});
+  var z=17;while(z>3){var w=mpLon2x(lo1,z)-mpLon2x(lo0,z),h=mpLat2y(la0,z)-mpLat2y(la1,z);if(w<W-160&&h<H-170)break;z--}
+  MP.z=z;MP.cx=(mpLon2x(lo0,z)+mpLon2x(lo1,z))/2;MP.cy=(mpLat2y(la0,z)+mpLat2y(la1,z))/2+12;
+}
+function mpTile(z,x,y){
+  var n=Math.pow(2,z);if(y<0||y>=n)return null;x=((x%n)+n)%n;var k=z+'/'+x+'/'+y,t=MP.tiles[k];
+  if(t)return t.ok?t.img:null;
+  var img=new Image();t=MP.tiles[k]={img:img,ok:false};
+  img.onload=function(){t.ok=true;mpDraw()};img.onerror=function(){t.err=true};
+  img.src='https://'+'abcd'.charAt((x+y)%4)+'.basemaps.cartocdn.com/dark_all/'+k+'.png';
+  return null;
+}
+function mpDraw(){
+  var cv=$('#mp-cv');if(!cv||$('#mp-modal').hidden)return;
+  var dpr=Math.min(window.devicePixelRatio||1,2),W=cv.clientWidth,H=cv.clientHeight;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+  var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+  c.fillStyle='#0b0b14';c.fillRect(0,0,W,H);
+  var z=MP.z,ox=MP.cx-W/2,oy=MP.cy-H/2,tx0=Math.floor(ox/256),ty0=Math.floor(oy/256),tx1=Math.floor((ox+W)/256),ty1=Math.floor((oy+H)/256),miss=0;
+  c.strokeStyle='rgba(255,255,255,.04)';c.lineWidth=1;
+  for(var tx=tx0;tx<=tx1;tx++)for(var ty=ty0;ty<=ty1;ty++){var im=mpTile(z,tx,ty),X=tx*256-ox,Y=ty*256-oy;if(im)c.drawImage(im,X,Y,256,256);else{miss++;c.strokeRect(X+.5,Y+.5,256,256)}}
+  var P=MP.pts;if(!P||P.length<2)return;
+  var acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#00e5ff';
+  c.lineJoin='round';c.lineCap='round';c.beginPath();
+  P.forEach(function(p,i){var x=mpLon2x(p[1]/1e5,z)-ox,y=mpLat2y(p[0]/1e5,z)-oy;if(i)c.lineTo(x,y);else c.moveTo(x,y)});
+  c.strokeStyle='rgba(0,0,0,.55)';c.lineWidth=9;c.stroke();c.strokeStyle=acc;c.lineWidth=5;c.stroke();
+  function dot(p,col){var x=mpLon2x(p[1]/1e5,z)-ox,y=mpLat2y(p[0]/1e5,z)-oy;c.beginPath();c.arc(x,y,9,0,7);c.fillStyle='#fff';c.fill();c.beginPath();c.arc(x,y,6,0,7);c.fillStyle=col;c.fill()}
+  dot(P[0],'#30d158');dot(P[P.length-1],'#ff453a');
+}
+/* tracé fictif pour les trajets du mode démo (autour du Vieux-Port) */
+function trkFake(r){
+  var seed=(r.id%100000)+7,rnd=function(){seed=(seed*16807)%2147483647;return seed/2147483647};
+  var la=43.2951+(rnd()-.5)*.03,lo=5.3740+(rnd()-.5)*.04,h=Math.floor(rnd()*4)*Math.PI/2,tgt=h,left=Math.max(r.dist,1)*1000,a=[],seg=0;
+  while(left>0&&a.length<3000){
+    if(seg<=0){tgt=h+(rnd()<.5?1:-1)*(Math.PI/2)*(rnd()<.7?1:.5);seg=150+rnd()*900}
+    h+=(tgt-h)*.35;var st=25;la+=st*Math.cos(h)/111320;lo+=st*Math.sin(h)/(111320*Math.cos(la*Math.PI/180));
+    a.push([Math.round(la*1e5),Math.round(lo*1e5)]);left-=st;seg-=st;
+  }
+  return a;
+}
+function demoSeed(){
+  if(window.AndroidApp||trips.length)return;
+  showDemoTrips=true;var now=Date.now(),D=[[7.8,1080,.55],[23.4,1860,1.52],[3.2,540,.27],[12.6,1260,.88]];
+  D.forEach(function(d,i){var t0=now-(i*26+3)*3600e3,r=newRec();r.id=t0;r.t0=t0;r.t1=t0+d[1]*1000;r.demo=true;r.dur=d[1];r.mov=d[1]*.85;r.idle=d[1]*.15;r.dist=d[0];r.fuel=d[2];
+    r.vmax=40+i*15;r.rpmMax=3400;r.rpmMin=780;r.rpmSum=2100*d[1];r.rpmN=d[1];r.brakes=3+i*2;r.stops=2+i;r.price=settings.fuelPrice;
+    ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off'].forEach(function(k){delete r[k]});trips.push(r);trkSave(r.id,trkFake(r))});
+  tripsSave();
+}
+function mapOpen(r){
+  MP.r=r;MP.pts=trkGet(r.id);if((!MP.pts||MP.pts.length<2)&&r.demo)MP.pts=trkFake(r);
+  var d=new Date(r.t0),fv=r.fav&&typeof favs!=='undefined'?null:null;
+  setTx('mp-ti',d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+  var s=tstat(r);setTx('mp-su',fmtN(r.dist,1)+' km · '+fmtDur(r.dur)+(s.cons!=null?' · '+fmtN(s.cons,1)+' L/100':'')+' · départ en vert, arrivée en rouge');
+  var m=$('#mp-msg');$('#mp-modal').hidden=false;
+  if(!MP.pts||MP.pts.length<2){
+    var g=geoState();
+    m.innerHTML=g&&!g.perm?'Pas de tracé pour ce trajet : l’autoradio n’a pas l’autorisation d’utiliser le GPS.<br><br><button type="button" class="btn" id="mp-perm">Autoriser le GPS</button>':
+      settings.gpsTrack===false?'Le tracé GPS est désactivé (Réglages › Trajets).':'Pas de tracé GPS pour ce trajet. Les prochains trajets seront tracés automatiquement, dès que l’autoradio capte le GPS.';
+    m.hidden=false;var pb=$('#mp-perm');if(pb)pb.onclick=function(){try{window.AndroidApp.geoPerm()}catch(e){}};
+    MP.pts=null;var g2=geoState();if(g2&&g2.ok){MP.z=13;MP.cx=mpLon2x(g2.lon,13);MP.cy=mpLat2y(g2.lat,13)}else{MP.z=11;MP.cx=mpLon2x(5.37,11);MP.cy=mpLat2y(43.296,11)}
+  }else{m.hidden=true;mpFit()}
+  requestAnimationFrame(mpDraw);
+}
+function wireMap(){
+  var cv=$('#mp-cv');
+  $('#mp-close').addEventListener('click',function(){$('#mp-modal').hidden=true;MP.tiles={}});
+  function zoom(d,fx,fy){var nz=clamp(MP.z+d,3,18);if(nz===MP.z)return;var W=cv.clientWidth,H=cv.clientHeight;fx=fx==null?W/2:fx;fy=fy==null?H/2:fy;
+    var wx=MP.cx-W/2+fx,wy=MP.cy-H/2+fy,f=Math.pow(2,nz-MP.z);MP.cx=wx*f-fx+W/2;MP.cy=wy*f-fy+H/2;MP.z=nz;mpDraw()}
+  $('#mp-in').addEventListener('click',function(){zoom(1)});
+  $('#mp-out').addEventListener('click',function(){zoom(-1)});
+  $('#mp-fit').addEventListener('click',function(){if(MP.pts){mpFit();mpDraw()}});
+  cv.addEventListener('pointerdown',function(e){MP.drag={x:e.clientX,y:e.clientY,cx:MP.cx,cy:MP.cy,t:Date.now()};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
+  cv.addEventListener('pointermove',function(e){var d=MP.drag;if(!d)return;MP.cx=d.cx-(e.clientX-d.x);MP.cy=d.cy-(e.clientY-d.y);mpDraw()});
+  cv.addEventListener('pointerup',function(e){var d=MP.drag;MP.drag=null;if(!d)return;
+    var now=Date.now(),r=cv.getBoundingClientRect();
+    if(Math.abs(e.clientX-d.x)<6&&Math.abs(e.clientY-d.y)<6){if(MP.lastTap&&now-MP.lastTap<320){zoom(1,e.clientX-r.left,e.clientY-r.top);MP.lastTap=0}else MP.lastTap=now}});
+  cv.addEventListener('wheel',function(e){e.preventDefault();var r=cv.getBoundingClientRect();zoom(e.deltaY<0?1:-1,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+  window.addEventListener('resize',function(){if(!$('#mp-modal').hidden)mpDraw()});
 }
 function fmtN(v,d){return v.toFixed(d).replace('.',',')}
 function tstat(r){
@@ -6793,7 +6924,7 @@ function tripsBuild(){
   list.forEach(function(r){
     var s=tstat(r),d=new Date(r.t0),row=document.createElement('div');row.className='tp-row';
     var dt=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    row.innerHTML='<button type="button" class="tp-h"><span><b></b><small></small></span><span class="tp-k"></span></button><div class="tp-d"><div class="tp-grid"></div><div class="tp-sp"></div><div class="ri-b"><button type="button" class="btn ghost" data-a="fav">Ajouter aux favoris</button><button type="button" class="btn ghost" data-a="del">Supprimer ce trajet</button></div></div>';
+    row.innerHTML='<button type="button" class="tp-h"><span><b></b><small></small></span><span class="tp-k"></span></button><div class="tp-d"><div class="tp-grid"></div><div class="tp-sp"></div><div class="ri-b"><button type="button" class="btn" data-a="map">Voir sur la carte</button><button type="button" class="btn ghost" data-a="fav">Ajouter aux favoris</button><button type="button" class="btn ghost" data-a="del">Supprimer ce trajet</button></div></div>';
     $('b',row).textContent=dt;if(r.demo){var bd=document.createElement('span');bd.className='tp-bd';bd.textContent='DÉMO';$('b',row).appendChild(bd)}
     $('small',row).textContent=fmtN(r.dist,1)+' km · '+fmtDur(r.dur)+(s.cons!=null?' · '+fmtN(s.cons,1)+' L/100':'');
     $('.tp-k',row).innerHTML='<small style="color:var(--fg-3);font-weight:600">Éco</small>'+ecoBadge(tripScore(r));
@@ -6804,9 +6935,10 @@ function tripsBuild(){
     var fvr=favOf(r);
     if(fvr){var tg=document.createElement('span');tg.className='fav-tag';tg.textContent='★ '+fvr.name;$('b',row).appendChild(tg);$('[data-a="fav"]',row).textContent='Voir le favori'}
     $('[data-a="fav"]',row).addEventListener('click',function(){favFromTrip(r,row)});
+    $('[data-a="map"]',row).addEventListener('click',function(){mapOpen(r)});
     $('[data-a="del"]',row).addEventListener('click',function(){
       if(!window.confirm('Supprimer ce trajet ?'))return;
-      trips=trips.filter(function(x){return x.id!==r.id});tripsSave();tripsBuild();
+      trips=trips.filter(function(x){return x.id!==r.id});tripsSave();trkDel(r.id);tripsBuild();
     });
     host.appendChild(row);
   });
@@ -6851,6 +6983,7 @@ function tripsCSV(){
 function wireTrips(){
   wireFav();
   tripsLoad();
+try{demoSeed()}catch(e){}
   $('#tp-end').addEventListener('click',function(){endTrip();tripsBuild()});
   $('#tp-demo').addEventListener('click',function(){showDemoTrips=!showDemoTrips;tripsBuild()});
   $('#tp-csv').addEventListener('click',function(){
@@ -6916,19 +7049,20 @@ function updateFuel(){
 function fuelLow(){var fi=fuelInfo();return !fi.measured&&fi.pct!=null&&fuelState(fi.pct)!==''?fi:null}
 function wireFuel(){
   fuelLoad();
-  var form=$('#fu-form'),adj=$('#fu-adjf'),fmode='full';
+  var form=$('#fu-form'),adj=$('#fu-adjf'),fmode='full',noLitresOk=false;
   function openForm(m){
     adj.hidden=true;$('#fu-err').hidden=true;
     if(!form.hidden&&fmode===m){form.hidden=true;return}
-    fmode=m;form.hidden=false;$('#fu-litres').value='';
-    $('#fu-lbl').textContent=m==='full'?'Litres mis à la pompe (facultatif, pour affiner)':'Litres ajoutés (plein partiel)';
+    fmode=m;form.hidden=false;$('#fu-litres').value='';noLitresOk=false;
+    $('#fu-lbl').textContent=m==='full'?'Litres mis à la pompe (pour la consommation réelle)':'Litres ajoutés (plein partiel)';
     $('#fu-ok').textContent=m==='full'?'Valider le plein':'Ajouter';
-    if(m==='part')setTimeout(function(){try{$('#fu-litres').focus()}catch(e){}},50);
+    setTimeout(function(){try{$('#fu-litres').focus()}catch(e){}},50);
   }
   function err(t){var e=$('#fu-err');e.textContent=t;e.hidden=false}
   $('#fu-fill').addEventListener('click',function(){openForm('full')});
   $('#fu-part').addEventListener('click',function(){openForm('part')});
   $('#fu-cancel').addEventListener('click',function(){form.hidden=true});
+  $('#fu-litres').addEventListener('input',function(){if(noLitresOk){noLitresOk=false;$('#fu-err').hidden=true;$('#fu-ok').textContent=fmode==='full'?'Valider le plein':'Ajouter'}});
   $('#fu-adj').addEventListener('click',function(){form.hidden=true;adj.hidden=!adj.hidden});
   $('#fu-ok').addEventListener('click',function(){
     var f=fuelS(),tank=settings.tank||50,L=parseFloat(String($('#fu-litres').value).replace(',','.'));
@@ -6946,6 +7080,12 @@ function wireFuel(){
       if(settings.islandAuto)islandEvent('Carburant ajouté','+'+nf1(L)+' L','✓',3000,'good');
       updateFuel();
       return;
+    }
+    /* plein complet sans litres : un rappel, puis on accepte au 2e appui */
+    if(!(isFinite(L)&&L>0)&&!noLitresOk){
+      noLitresOk=true;$('#fu-ok').textContent='Valider sans les litres';
+      try{$('#fu-litres').focus()}catch(e){}
+      return err('Pense à saisir les litres affichés sur la pompe : sans eux, l’iPhone ne pourra pas calculer la consommation réelle jusqu’au prochain plein.');
     }
     /* plein complet. Affinage : carburant réellement consommé depuis le dernier plein complet
        = litres mis maintenant + litres ajoutés entre-temps ; on le compare à l'estimation OBD */
@@ -7188,6 +7328,29 @@ var IPHSYNC='sandero-iph-sync',iph={pages:[],i:0,all:false,maxT:0};
 function b36(n){n=Math.round(+n||0);return (n<0?0:n).toString(36)}
 function qEnc(t){return encodeURIComponent(String(t||'')).replace(/\./g,'%2E').replace(/_/g,'%5F').replace(/~/g,'%7E')}
 function iphBase(){var u=String(settings.iphoneUrl||'').trim();if(!u)return '';if(!/^https?:\/\//.test(u))u='https://'+u;u=u.split('#')[0];if(!/\/$/.test(u)&&!/\.[a-z0-9]+$/i.test(u.split('/').pop()))u+='/';return u}
+/* tracé simplifié pour le QR : précision 1e-4° (~10 m), 90 points max par trajet */
+function trkSimplify(P,tol){
+  if(P.length<3)return P.slice();
+  var keep=new Uint8Array(P.length),st=[[0,P.length-1]];keep[0]=keep[P.length-1]=1;
+  while(st.length){var se=st.pop(),a=P[se[0]],b=P[se[1]],dx=b[1]-a[1],dy=b[0]-a[0],L2=dx*dx+dy*dy,mi=-1,md=0;
+    for(var i=se[0]+1;i<se[1];i++){var p=P[i],t=L2?((p[1]-a[1])*dx+(p[0]-a[0])*dy)/L2:0;t=t<0?0:t>1?1:t;var ex=a[1]+t*dx-p[1],ey=a[0]+t*dy-p[0],d=ex*ex+ey*ey;if(d>md){md=d;mi=i}}
+    if(mi>0&&md>tol*tol){keep[mi]=1;st.push([se[0],mi],[mi,se[1]])}}
+  return P.filter(function(_,i){return keep[i]});
+}
+function trkQr(P){
+  var Q=P.map(function(p){return [Math.round(p[0]/10),Math.round(p[1]/10)]}),tol=1,S=trkSimplify(Q,tol);
+  while(S.length>90&&tol<40){tol*=1.6;S=trkSimplify(Q,tol)}
+  var o=[],pl=0,pn=0;S.forEach(function(p){o.push((p[0]-pl).toString(36),(p[1]-pn).toString(36));pl=p[0];pn=p[1]});
+  return o.join('.');
+}
+function iphTracks(L){
+  var items=[];
+  L.slice(-20).forEach(function(r){var P=trkGet(r.id);if((!P||P.length<2)&&r.demo)P=trkFake(r);if(P&&P.length>=2)items.push(b36(r.t0/1000)+'.'+trkQr(P))});
+  var packs=[],cur='';
+  items.forEach(function(it){if(cur&&cur.length+it.length>850){packs.push(cur);cur=''}cur+=(cur?'_':'')+it});
+  if(cur)packs.push(cur);
+  return packs;
+}
 function iphBuild(all){
   var last=0;if(!all){try{last=+localStorage.getItem(IPHSYNC)||0}catch(e){}}
   var L=trips.filter(function(r){return (showDemoTrips||!r.demo)&&r.t0>last}).sort(function(a,b){return a.t0-b.t0});
@@ -7204,11 +7367,14 @@ function iphBuild(all){
     H=[bR?b36(bR.v*100):'',bU?b36(bU.v*100):'',dOk?(DTCS.codes||[]).slice(0,6).join('-'):'',dOk?b36(DTCS.t/1000):'',
        ns?qEnc(ns.n):'',ns?({ok:'0',warn:'1',bad:'2'}[ns.state]||''):'',ns?qEnc(nsTxt):'',pr.s.charAt(0),qEnc(pr.t)].join('.');
   }catch(e){H=''}
-  var per=12,n=Math.max(1,Math.ceil(T.length/per)),pages=[];
+  /* tracés GPS : codes en plus, après les codes habituels (8e champ, ignoré par les anciennes versions de l'appli iPhone) */
+  var G=settings.iphTracks===false?[]:iphTracks(L);
+  var per=12,n=Math.max(1,Math.ceil(T.length/per)),pages=[],tot=n+G.length;
   for(var i=0;i<n;i++){
-    pages.push('v1~'+snap+'~'+(i+1)+'-'+n+'~'+T.slice(i*per,(i+1)*per).join('_')+'~'+(i===0?F.slice(-20).join('_'):'')+'~'+(i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):'')+'~'+(i===0?H:''));
+    pages.push('v1~'+snap+'~'+(i+1)+'-'+tot+'~'+T.slice(i*per,(i+1)*per).join('_')+'~'+(i===0?F.slice(-20).join('_'):'')+'~'+(i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):'')+'~'+(i===0?H:''));
   }
-  iph.pages=pages;iph.i=0;iph.all=all;iph.maxT=L.length?L[L.length-1].t0:0;iph.count=L.length;
+  G.forEach(function(g,k){pages.push('v1~'+snap+'~'+(n+k+1)+'-'+tot+'~~~~~'+g)});
+  iph.nTrk=G.length;iph.pages=pages;iph.i=0;iph.all=all;iph.maxT=L.length?L[L.length-1].t0:0;iph.count=L.length;
 }
 function iphDraw(){
   var cv=$('#qr-cv'),em=$('#qr-empty'),base=iphBase(),demoUrl=!base;
@@ -7224,7 +7390,7 @@ function iphDraw(){
   setTx('qr-n',(iph.i+1)+' / '+iph.pages.length);
   $('#qr-pg').hidden=iph.pages.length<2;
   $('#qr-prev').disabled=iph.i===0;$('#qr-next').disabled=iph.i>=iph.pages.length-1;
-  var info=iph.count?iph.count+' trajet'+(iph.count>1?'s':'')+(iph.all?' au total':' depuis le dernier envoi')+(iph.pages.length>1?', en '+iph.pages.length+' codes à scanner l’un après l’autre':'')+'.':'Aucun nouveau trajet : le code envoie seulement le réservoir et l’autonomie.';
+  var info=iph.count?iph.count+' trajet'+(iph.count>1?'s':'')+(iph.all?' au total':' depuis le dernier envoi')+(iph.nTrk?', avec '+(iph.nTrk>1?iph.nTrk+' codes':'1 code')+' pour les tracés GPS':'')+(iph.pages.length>1?', en '+iph.pages.length+' codes à scanner l’un après l’autre':'')+'.':'Aucun nouveau trajet : le code envoie seulement le réservoir et l’autonomie.';
   if(demoUrl)info+=' Adresse de l’appli iPhone non réglée (Réglages › Trajets) : ce code est un exemple.';
   setTx('qr-info',info);
   setTx('qr-all',iph.all?'Seulement les nouveaux':'Tout renvoyer');
@@ -7232,6 +7398,8 @@ function iphDraw(){
 function iphOpen(all){iphBuild(!!all);$('#qr-modal').hidden=false;iphDraw()}
 function wireIphone(){
   $('#tp-iph').addEventListener('click',function(){iphOpen(false)});
+  $('#hm-iph').addEventListener('click',function(){iphOpen(false)});
+  $('#qr-close').addEventListener('click',function(){try{updateHome()}catch(e){}});
   $('#qr-close').addEventListener('click',function(){$('#qr-modal').hidden=true});
   $('#qr-prev').addEventListener('click',function(){if(iph.i>0){iph.i--;iphDraw()}});
   $('#qr-next').addEventListener('click',function(){if(iph.i<iph.pages.length-1){iph.i++;iphDraw()}});
@@ -7398,6 +7566,8 @@ var SCHEMA=[
  ]},
  {col:'B',t:'Trajets',items:[
   {k:'tripEnd',l:'Fin du trajet après (min à l’arrêt)',type:'num',min:1,max:60,step:1},
+  {k:'gpsTrack',l:'Tracé GPS des trajets',h:'Pour revoir sur une carte par où tu es passée.',type:'seg',o:boolOpts()},
+  {k:'iphTracks',l:'Envoyer les tracés à l’iPhone',h:'Ajoute des codes QR en plus pour les tracés (les 20 derniers trajets envoyés au maximum).',type:'seg',o:boolOpts()},
   {k:'fuelPrice',l:'Prix du carburant (€/L)',type:'num',min:0.5,max:4,step:0.01}
  ]},
  {col:'B',t:'Sauvegarde',items:[{type:'backup'}]}
@@ -7738,6 +7908,7 @@ function updateHome(){
   rev.items.forEach(function(it){if(revItemState(it).state==='bad')late++});
   setTx('hm-ent',late?late+' en retard':ns?(ns.left<0?'En retard':'À jour'):'À renseigner');
   updateHomeTrips();
+  (function(){var last=0;try{last=+localStorage.getItem(IPHSYNC)||0}catch(e){}var n=trips.filter(function(r){return !r.demo&&r.t0>last}).length;setTx('hm-iphs',n?n+' à envoyer':'À jour')})();
   setTx('hm-cool',data.coolant!=null?Math.round(data.coolant)+'°C':'–');
   setTx('hm-volt',data.volt!=null?data.volt.toFixed(1).replace('.',',')+' V':'–');
   var hfi=fuelInfo();
@@ -8004,6 +8175,7 @@ function wire(){
   wirePhoneLink();
   wireSplit();
   wireIphone();
+try{wireMap()}catch(e){}
   window.__plReady=true;
   wireBilan();
   $('#back-btn').addEventListener('click',goBack);
@@ -8045,7 +8217,7 @@ if(!settings.nameMig){settings.nameMig=1;if(!settings.carName||settings.carName=
 devSetup();
 devProfile();
 if(autoPossible()){setMode('idle');setTx('conn-msg','Connexion automatique au dernier adaptateur utilisé…');autoSchedule(1500)}
-else if(settings.demoOff){setMode('idle');setTx('conn-msg','Mode démo désactivé. Touche « Adaptateur OBD-II » pour te connecter.')}
+else if(settings.demoOff&&window.AndroidApp){setMode('idle');setTx('conn-msg','Mode démo désactivé. Touche « Adaptateur OBD-II » pour te connecter.')}
 else setMode('demo');
 /* la pastille d'état en haut : « Mode démo » se coupe d'une touche, sinon elle ouvre la connexion */
 $('#status').style.cursor='pointer';

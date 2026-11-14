@@ -12,8 +12,7 @@ import android.os.Bundle;
 import android.os.Looper;
 
 /**
- * Position GPS de l'autoradio, utilisée seulement pour reconnaître les trajets favoris
- * (point de départ et d'arrivée). Rien n'est envoyé ailleurs : la position reste dans l'appli.
+ * Position GPS de l'autoradio : trajets favoris (départ et arrivée) et tracé des trajets sur la carte. Rien n'est envoyé ailleurs : la position reste dans l'appli.
  */
 class GeoLink implements LocationListener {
     static final int REQ_PERM = 52;
@@ -53,7 +52,7 @@ class GeoLink implements LocationListener {
                 Location l = lm.getLastKnownLocation(p);
                 keep(l);
                 if (LocationManager.GPS_PROVIDER.equals(p) || LocationManager.NETWORK_PROVIDER.equals(p)) {
-                    lm.requestLocationUpdates(p, 20000L, 30f, this, Looper.getMainLooper());
+                    lm.requestLocationUpdates(p, 3000L, 10f, this, Looper.getMainLooper());
                 }
             }
             on = true;
