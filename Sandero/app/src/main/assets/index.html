@@ -3917,7 +3917,7 @@ var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:fal
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
   carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
-  demoOff:true,updAuto:true,tripMerge:5,consGoal:0,ghost:true,harmony:'neon',iphExtra:true,iphAuto:true,iphZip:false,iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
+  demoOff:true,updAuto:true,tripMerge:5,consGoal:0,ghost:true,harmony:'neon',iphExtra:true,iphAuto:true,iphZip:true,iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
 if((settings.uiv||0)<2){
@@ -8375,7 +8375,7 @@ var SCHEMA=[
   {k:'mapStyle',l:'Style de la carte',type:'seg',o:[['neon','Néon'],['sombre','Sombre'],['or','Doré'],['clair','Clair']]},
   {k:'mapEngine',l:'Fond de carte',h:'« Simple » utilise des images : moins joli, mais plus léger pour l’autoradio et sans WebGL.',type:'seg',o:[['auto','Détaillé'],['raster','Simple']]},
   {k:'iphAuto',l:'Codes qui défilent tout seuls',h:'Le scanner de l’appli iPhone les récupère sans toucher à rien. Bouton ❚❚ pour arrêter.',type:'seg',o:boolOpts()},
-  {k:'iphZip',l:'Codes compressés',h:'2 à 3 fois moins de codes. N’active que si ton appli iPhone sait les lire (version compatible).',type:'seg',o:boolOpts()},
+  {k:'iphZip',l:'Codes compressés',h:'2 fois moins de codes. L’appli iPhone 2.23 ou plus récente sait les lire.',type:'seg',o:boolOpts()},
   {k:'iphExtra',l:'Envoyer toutes les infos de la voiture',h:'Un code en plus : entretien complet, pneus, freins, kilométrage, voiture garée, codes défaut expliqués, historique de la batterie.',type:'seg',o:boolOpts()},
   {k:'iphTracks',l:'Envoyer les tracés à l’iPhone',h:'Ajoute des codes QR en plus pour les tracés (les 20 derniers trajets envoyés au maximum).',type:'seg',o:boolOpts()},
   {k:'fuelPrice',l:'Prix du carburant (€/L)',type:'num',min:0.5,max:4,step:0.01}
@@ -9110,6 +9110,8 @@ function ecoApply(){
 }
 window.onAppVisible=function(v){if(v)setTimeout(updAutoTick,4000);if(v&&(UPD.st==='perm'||UPD.st==='ready'))updUI();var b=!v;if(b===ECO.bg)return;ECO.bg=b;ecoApply();if(!b&&tsPending){var p=tsPending;tsPending=null;if(Date.now()-p.t<30*60000)setTimeout(function(){tsShow(p.r)},600)}};
 if(!String(settings.iphoneUrl||'').trim()){settings.iphoneUrl='https://alyoury.github.io/la-mathias/';saveSettings()}
+/* l'appli iPhone 2.23 lit les codes compressés : on les active */
+if(!settings.zipMig){settings.zipMig=1;settings.iphZip=true;saveSettings()}
 if(!settings.nameMig){settings.nameMig=1;if(!settings.carName||settings.carName==='Sandero'){settings.carName='La Mathias'}saveSettings();applyAll()}
 devSetup();
 devProfile();
