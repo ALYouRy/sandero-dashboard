@@ -262,6 +262,43 @@ public class MainActivity extends Activity {
     }
 
     private class AppApi {
+        /* ---- stockage des trajets et tracés dans des fichiers (pas de limite de 5 Mo comme le stockage du navigateur) ---- */
+        private java.io.File storeFile(String name) {
+            String n = name == null ? "x" : name.replaceAll("[^a-zA-Z0-9._-]", "_");
+            java.io.File d = new java.io.File(getFilesDir(), "donnees");
+            //noinspection ResultOfMethodCallIgnored
+            d.mkdirs();
+            return new java.io.File(d, n + ".json");
+        }
+        @JavascriptInterface
+        public String storeRead(String name) {
+            java.io.File f = storeFile(name);
+            if (!f.exists()) return null;
+            try (java.io.FileInputStream in = new java.io.FileInputStream(f)) {
+                byte[] b = new byte[(int) f.length()];
+                int off = 0, n;
+                while (off < b.length && (n = in.read(b, off, b.length - off)) > 0) off += n;
+                return new String(b, 0, off, "UTF-8");
+            } catch (Exception e) { return null; }
+        }
+        @JavascriptInterface
+        public boolean storeWrite(String name, String data) {
+            java.io.File f = storeFile(name), tmp = new java.io.File(f.getPath() + ".tmp");
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(tmp)) {
+                out.write(data.getBytes("UTF-8"));
+                out.getFD().sync();
+            } catch (Exception e) { //noinspection ResultOfMethodCallIgnored
+                tmp.delete(); return false; }
+            return tmp.renameTo(f);
+        }
+        @JavascriptInterface
+        public long storeSize() {
+            long t = 0;
+            java.io.File[] fs = new java.io.File(getFilesDir(), "donnees").listFiles();
+            if (fs != null) for (java.io.File f : fs) t += f.length();
+            return t;
+        }
+
         /* ---- mise à jour par internet ---- */
         @JavascriptInterface
         public int appVersion() {
