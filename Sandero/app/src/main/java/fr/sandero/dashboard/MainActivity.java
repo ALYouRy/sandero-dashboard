@@ -407,6 +407,13 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String geoBatch(String after) {
+            long a = 0;
+            try { a = Long.parseLong(after); } catch (Exception ignored) {}
+            return geo == null ? "[]" : geo.batch(a);
+        }
+
+        @JavascriptInterface
         public void geoPerm() {
             runOnUiThread(() -> { if (geo != null) geo.askPerm(); });
         }

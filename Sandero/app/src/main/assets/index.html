@@ -6932,7 +6932,7 @@ function endTrip(){
   finalizeTrip(r,false);
 }
 function finalizeTrip(r,recovered){
-  ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off','_g','_gt','_dm','_tf','_gs','_gpsN','_gpsMiss'].forEach(function(k){delete r[k]});
+  ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off','_g','_gt','_dm','_tf','_gs','_gpsN','_gpsMiss','_fx','_fxOk','_fxRej','_kf'].forEach(function(k){delete r[k]});
   var trk=r.trk;delete r.trk;
   if(r.rpmMin===99999)r.rpmMin=0;
   if(r.vMin===99)r.vMin=0;
@@ -6995,6 +6995,51 @@ function trkEnds(id){
   return TRKE[id]=e;
 }
 function geoDist(a,b){var r=Math.PI/180,x=(b[1]-a[1])*1e-5*r*Math.cos((a[0]+b[0])/2*1e-5*r),y=(b[0]-a[0])*1e-5*r;return Math.sqrt(x*x+y*y)*6371000}
+/* ---------- Tracé GPS précis ----------
+   L'autoradio garde chaque position GPS (1 par seconde) ; l'appli les relit toutes et :
+   - écarte les positions imprécises (au-delà de 35 m, 80 m si le GPS capte mal depuis longtemps) ;
+   - écarte les sauts impossibles (plus loin que ce que permet la vitesse du compteur) ;
+   - ignore la dérive du GPS à l'arrêt (feu rouge, bouchon) ;
+   - lisse la position avec un filtre de Kalman simple, qui fait d'autant plus confiance au GPS que tu roules vite ;
+   - garde un point tous les 10 m au moins. */
+function trkPush(p,s,dd){
+  var t=rec.trk||(rec.trk=[]),q=t[t.length-1];
+  var cv=null;if(q&&rec._tf!=null){var fl=rec.fuel-rec._tf;if(fl>=0&&dd>0)cv=Math.round(clamp(fl/(dd/1000)*100,0,40)*10)}
+  rec._tf=rec.fuel;
+  p.push(cv,Math.round(s),Math.round(rec.dur));
+  t.push(p);
+  if(t.length>3000)rec.trk=t.filter(function(_,i){return i%2===0||i===t.length-1});
+}
+function trkGps(s){
+  var raw;try{raw=JSON.parse(window.AndroidApp.geoBatch(String(rec._fx||0)))}catch(e){raw=[]}
+  var K=rec._kf,now=Date.now();
+  rec._gpsN=(rec._gpsN||0)+1;
+  raw.forEach(function(f){
+    var n=f[0],lat=f[1],lon=f[2],acc=Math.max(3,f[3]),spd=f[4],tm=f[5];
+    rec._fx=n;
+    var lastOk=rec._fxOk||0,poor=now-lastOk>20000;
+    if(acc>(poor?80:35)){rec._fxRej=(rec._fxRej||0)+1;return}
+    var vObd=(s||0)/3.6,v=Math.max(vObd,spd>0?spd:0);
+    if(K){
+      var dt=Math.max(0.2,(tm-K.t)/1000),d=hav([K.lat,K.lon],[lat,lon]);
+      /* saut impossible : plus loin que la vitesse ne le permet (avec une marge) */
+      if(d>(v*1.6+12)*dt+acc*2+25){K.bad=(K.bad||0)+1;rec._fxRej=(rec._fxRej||0)+1;if(K.bad<5)return;K=null}
+    }
+    if(!K){K=rec._kf={lat:lat,lon:lon,var:acc*acc,t:tm,bad:0}}
+    else{
+      var dt2=Math.max(0,(tm-K.t)/1000),q=Math.max(3,v);
+      K.var+=dt2*q*q;var g=K.var/(K.var+acc*acc);
+      K.lat+=g*(lat-K.lat);K.lon+=g*(lon-K.lon);K.var=(1-g)*K.var;K.t=tm;K.bad=0;
+    }
+    rec._fxOk=now;
+    /* à l'arrêt, le GPS « danse » : on ne trace rien tant que la voiture ne roule pas */
+    if(vObd<0.6&&(spd<0||spd<0.8))return;
+    var p=[Math.round(K.lat*1e5),Math.round(K.lon*1e5)],t=rec.trk||[],q2=t[t.length-1],dd=q2?geoDist(q2,p):0;
+    if(q2&&dd<10)return;
+    trkPush(p,s,dd);
+  });
+  if(!raw.length)rec._gpsMiss=(rec._gpsMiss||0)+1;
+}
 function trkTick(dt,s){
   rec._gt=(rec._gt||0)+dt;if(rec._gt<2)return;var el=rec._gt;rec._gt=0;
   var p=null;
@@ -7002,7 +7047,8 @@ function trkTick(dt,s){
     var dm=rec._dm||(rec._dm={lat:43.2965,lon:5.3698,h:Math.random()*6.28});
     dm.h+=(Math.random()-.5)*.5;var m=s*el/3.6;dm.lat+=m*Math.cos(dm.h)/111320;dm.lon+=m*Math.sin(dm.h)/(111320*Math.cos(dm.lat*Math.PI/180));
     p=[Math.round(dm.lat*1e5),Math.round(dm.lon*1e5)];
-  }else{var g=geoState();
+  }else if(window.AndroidApp&&window.AndroidApp.geoBatch){trkGps(s);return}
+  else{var g=geoState();
     /* position nouvelle (numéro de position qui change) et assez précise ; l'âge sert seulement de garde-fou */
     if(g&&g.ok&&g.acc<=60){var fresh=g.seq!=null?(g.seq!==rec._gs&&g.age<=30):g.age<=10;if(fresh){rec._gs=g.seq;p=[Math.round(g.lat*1e5),Math.round(g.lon*1e5)]}}
     rec._gpsN=(rec._gpsN||0)+1;if(!p)rec._gpsMiss=(rec._gpsMiss||0)+1}

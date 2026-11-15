@@ -23,6 +23,9 @@ class GeoLink implements LocationListener {
     private boolean on;
     /** numéro de la dernière position reçue : l'appli sait ainsi si une position est nouvelle, même si l'horloge de l'autoradio est fausse */
     private long seq;
+    /* toutes les positions GPS reçues (1 par seconde), gardées 3 minutes : l'appli les relit toutes, aucune n'est perdue */
+    private final java.util.ArrayDeque<double[]> fixes = new java.util.ArrayDeque<>();
+    private long fixSeq;
 
     GeoLink(Activity act) {
         this.act = act;
@@ -51,12 +54,12 @@ class GeoLink implements LocationListener {
         try {
             lm = (LocationManager) act.getSystemService(Context.LOCATION_SERVICE);
             if (lm == null) return;
-            try { lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 0f, this, Looper.getMainLooper()); } catch (Exception ignored) {}
+            try { lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, this, Looper.getMainLooper()); } catch (Exception ignored) {}
             for (String p : lm.getProviders(true)) {
                 Location l = lm.getLastKnownLocation(p);
                 keep(l);
                 if (LocationManager.NETWORK_PROVIDER.equals(p)) {
-                    lm.requestLocationUpdates(p, 2000L, 0f, this, Looper.getMainLooper());
+                    lm.requestLocationUpdates(p, LocationManager.GPS_PROVIDER.equals(p) ? 1000L : 3000L, 0f, this, Looper.getMainLooper());
                 }
             }
             on = true;
@@ -115,6 +118,29 @@ class GeoLink implements LocationListener {
     @Override
     public void onLocationChanged(Location l) {
         keep(l);
+        if (l != null && LocationManager.GPS_PROVIDER.equals(l.getProvider())) {
+            synchronized (fixes) {
+                fixSeq++;
+                long el = Build.VERSION.SDK_INT >= 17 && l.getElapsedRealtimeNanos() > 0 ? l.getElapsedRealtimeNanos() / 1000000L : SystemClock.elapsedRealtime();
+                fixes.addLast(new double[]{fixSeq, l.getLatitude(), l.getLongitude(), l.hasAccuracy() ? l.getAccuracy() : 99,
+                        l.hasSpeed() ? l.getSpeed() : -1, el});
+                while (fixes.size() > 180) fixes.removeFirst();
+            }
+        }
+    }
+
+    /** positions GPS reçues après le numéro « after » : [[n,lat,lon,précision m,vitesse m/s,horloge ms],…] */
+    String batch(long after) {
+        StringBuilder b = new StringBuilder("[");
+        synchronized (fixes) {
+            for (double[] f : fixes) {
+                if ((long) f[0] <= after) continue;
+                if (b.length() > 1) b.append(',');
+                b.append('[').append((long) f[0]).append(',').append(f[1]).append(',').append(f[2]).append(',')
+                        .append(Math.round(f[3] * 10) / 10.0).append(',').append(Math.round(f[4] * 10) / 10.0).append(',').append((long) f[5]).append(']');
+            }
+        }
+        return b.append(']').toString();
     }
 
     @Override
@@ -127,7 +153,7 @@ class GeoLink implements LocationListener {
     public void onProviderEnabled(String p) {
         try {
             if (lm != null && hasPerm() && (LocationManager.GPS_PROVIDER.equals(p) || LocationManager.NETWORK_PROVIDER.equals(p))) {
-                lm.requestLocationUpdates(p, 2000L, 0f, this, Looper.getMainLooper());
+                lm.requestLocationUpdates(p, LocationManager.GPS_PROVIDER.equals(p) ? 1000L : 3000L, 0f, this, Looper.getMainLooper());
             }
         } catch (Exception ignored) {
         }
