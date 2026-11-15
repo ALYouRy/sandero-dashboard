@@ -1177,6 +1177,7 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
 .wf-l{display:block;font-size:12.5px;color:var(--fg-2);font-weight:600;margin-bottom:8px}
 .wf-in{display:block;width:100%;box-sizing:border-box;text-align:left;margin-top:4px}
 .wf-b{display:flex;gap:8px;margin-top:8px}
+.wf-auto{display:flex;gap:10px;align-items:flex-start;margin:6px 0 2px;font-size:13px;color:var(--fg-2);cursor:pointer}.wf-auto input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent);flex:0 0 auto}.wf-auto b{display:block;color:var(--fg);font-size:14px}.wf-auto small{display:block;line-height:1.35}
 .wf-msg{font-size:13px;min-height:18px;margin:8px 0 0;color:var(--fg-2)}
 .wf-help{margin-top:6px;font-size:13px;color:var(--fg-2)}.wf-help summary{cursor:pointer;font-weight:700;color:var(--fg)}
 .wf-help ol{margin:8px 0 0;padding-left:20px;line-height:1.45}.wf-help li{margin-bottom:5px}
@@ -1720,16 +1721,18 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
     <div class="wf-cols">
       <div class="wf-col">
         <h3>Mon partage de connexion</h3>
-        <p class="wf-hint">Enregistre une fois le partage de connexion de ton téléphone : l’autoradio s’y reconnectera tout seul ensuite.</p>
+        <p class="wf-hint">Enregistre une fois le partage de connexion de ton téléphone : l’autoradio s’y connectera tout seul à chaque démarrage.</p>
         <label class="wf-l">Nom du réseau<input class="field wf-in" id="wf-hs" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex. iPhone de Tristan"></label>
         <label class="wf-l">Mot de passe<input class="field wf-in" id="wf-hp" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-        <div class="wf-b"><button type="button" class="btn" id="wf-hgo">Se connecter</button><button type="button" class="btn ghost" id="wf-hshow">Afficher</button></div>
+        <label class="wf-auto"><input type="checkbox" id="wf-auto" checked><span><b>Se connecter tout seul</b><small>Dès que l’autoradio n’est sur aucun Wi-Fi, il cherche ce réseau et s’y connecte, même quand l’appli est en arrière-plan.</small></span></label>
+        <div class="wf-b"><button type="button" class="btn" id="wf-hgo">Enregistrer et connecter</button><button type="button" class="btn ghost" id="wf-hshow">Afficher</button></div>
         <p class="wf-msg" id="wf-msg"></p>
         <details class="wf-help"><summary>Aide : activer le partage sur l’iPhone</summary><ol>
           <li>Sur l’iPhone : <b>Réglages → Partage de connexion</b>, active <b>Autoriser d’autres utilisateurs</b>.</li>
           <li>Active aussi <b>Maximiser la compatibilité</b> : beaucoup d’autoradios ne voient pas le Wi-Fi 5 GHz.</li>
           <li>Le nom du réseau est celui de l’iPhone (<b>Réglages → Général → Informations → Nom</b>). Le mot de passe est affiché dans Partage de connexion.</li>
-          <li>Garde l’écran Partage de connexion ouvert quelques secondes pendant que l’autoradio se connecte.</li>
+          <li>La première fois, garde l’écran Partage de connexion ouvert quelques secondes pendant que l’autoradio se connecte.</li>
+          <li>Ensuite c’est automatique. Si l’iPhone a mis son partage en veille (aucun appareil depuis un moment), il suffit d’ouvrir l’écran Partage de connexion : l’autoradio le retrouve en moins de 30 secondes.</li>
           <li>Sur Android : <b>Paramètres → Réseau → Point d’accès</b>, même principe.</li>
         </ol></details>
       </div>
@@ -8954,7 +8957,7 @@ function wfInd(){
   var now=Date.now();if(now-WF.t<4000)return;WF.t=now;
   var st=wfRead(),k=wfLook(st),net=st.wifi?(st.net?'1':'0'):'';
   ['hb-wf','hm-wf'].forEach(function(id){var e=document.getElementById(id);if(e){e.setAttribute('data-s',k);e.setAttribute('data-net',net)}});
-  setTx('hb-wft',!st.on?'Wi-Fi coupé':st.wifi?(st.ssid||'Wi-Fi')+(st.net?'':' · sans internet'):'Pas de Wi-Fi');
+  setTx('hb-wft',!st.on?'Wi-Fi coupé':st.wifi?(st.ssid||'Wi-Fi')+(st.net?'':' · sans internet'):(st.auto?st.auto.replace(/…$/,'').replace(/^Recherche de /,'Recherche ')+'…':'Pas de Wi-Fi'));
   if(WF.pend&&st.wifi&&st.ssid===WF.pend){setTx('wf-msg','Connecté à '+st.ssid+(st.net?' ✓':' (pas encore d’internet…)'));WF.pend=null}
   if(!$('#wf-modal').hidden)wfStatus(st);
 }
@@ -8962,7 +8965,7 @@ function wfStatus(st){
   var box=$('#wf-st');box.setAttribute('data-s',wfLook(st));box.setAttribute('data-net',st.wifi?(st.net?'1':'0'):'');
   var bars=['très faible','faible','bon','excellent'];
   setTx('wf-st-t',!st.on?'Wi-Fi désactivé':st.wifi?'Connecté à '+(st.ssid||'un réseau'):'Wi-Fi activé, pas connecté');
-  setTx('wf-st-s',!st.on?'Active-le pour te connecter au partage de connexion de ton téléphone.':st.wifi?('Signal '+bars[Math.max(0,Math.min(3,st.lvl||0))]+' · '+(st.net?'internet OK : mises à jour et carte disponibles':'pas d’accès à internet sur ce réseau')):(st.other?'Internet passe par un autre moyen (4G, câble).':'Choisis un réseau ou ton partage de connexion.'));
+  setTx('wf-st-s',!st.on?'Active-le pour te connecter au partage de connexion de ton téléphone.':st.wifi?('Signal '+bars[Math.max(0,Math.min(3,st.lvl||0))]+' · '+(st.net?'internet OK : mises à jour et carte disponibles':'pas d’accès à internet sur ce réseau')):(st.auto?st.auto+' (automatique)':st.other?'Internet passe par un autre moyen (4G, câble).':'Choisis un réseau ou ton partage de connexion.'));
   setTx('wf-tog',st.on?'Désactiver':'Activer');$('#wf-tog').hidden=!!st.demo;
 }
 function wfList(){
@@ -8992,7 +8995,7 @@ function wfGo(ssid,pwd){
 }
 function wfOpen(){
   $('#wf-modal').hidden=false;$('#wf-pw').hidden=true;setTx('wf-msg','');
-  $('#wf-hs').value=settings.wfHs||'';$('#wf-hp').value=settings.wfHp||'';
+  $('#wf-hs').value=settings.wfHs||'';$('#wf-hp').value=settings.wfHp||'';$('#wf-auto').checked=settings.wfAuto!==false;
   WF.t=0;wfInd();wfStatus(WF.st);
   try{window.AndroidApp.wifiScan()}catch(e){}wfList();
   clearInterval(WF.iv);WF.iv=setInterval(function(){if($('#wf-modal').hidden){clearInterval(WF.iv);return}WF.t=0;wfInd();wfList()},4000);
@@ -9009,12 +9012,16 @@ function wireWifi(){
     var n=$('#wf-hs').value.trim(),pw=$('#wf-hp').value;
     if(!n){setTx('wf-msg','Écris le nom du réseau (le nom de ton téléphone).');return}
     if(pw&&pw.length<8){setTx('wf-msg','Le mot de passe fait au moins 8 caractères.');return}
-    settings.wfHs=n;settings.wfHp=pw;saveSettings();wfGo(n,pw);
+    settings.wfHs=n;settings.wfHp=pw;settings.wfAuto=$('#wf-auto').checked;saveSettings();wfSync();wfGo(n,pw);
   });
-  $('#wf-pw-go').addEventListener('click',function(){var pw=$('#wf-pw-i').value;if(pw.length<8){setTx('wf-msg','Le mot de passe fait au moins 8 caractères.');return}$('#wf-pw').hidden=true;wfGo(WF.pw,pw)});
+  $('#wf-pw-go').addEventListener('click',function(){var pw=$('#wf-pw-i').value;if(pw.length<8){setTx('wf-msg','Le mot de passe fait au moins 8 caractères.');return}$('#wf-pw').hidden=true;if(!settings.wfHs){settings.wfHs=WF.pw;settings.wfHp=pw;saveSettings();$('#wf-hs').value=WF.pw;$('#wf-hp').value=pw;wfSync()}wfGo(WF.pw,pw)});
   $('#wf-pw-x').addEventListener('click',function(){$('#wf-pw').hidden=true});
+  $('#wf-auto').addEventListener('change',function(){settings.wfAuto=this.checked;saveSettings();wfSync();setTx('wf-msg',this.checked?(settings.wfHs?'Connexion automatique à '+settings.wfHs+' activée.':'Enregistre d’abord le nom et le mot de passe.'):'Connexion automatique désactivée.')});
+  wfSync();
   setInterval(function(){if(!ECO.bg)wfInd()},5000);wfInd();
 }
+/* transmet le partage de connexion à l'autoradio (il s'en occupe tout seul, même appli en arrière-plan ou juste après le démarrage) */
+function wfSync(){if(window.AndroidApp&&window.AndroidApp.wifiAuto)try{window.AndroidApp.wifiAuto(settings.wfHs||'',settings.wfHp||'',settings.wfAuto!==false)}catch(e){}}
 var LAYS=[
   {k:'classic',n:'Classique',d:'La voiture en grand',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="52" height="34" rx="4" fill="#3a4160"/><rect x="13" y="39" width="52" height="9" rx="3" fill="#2a2f40"/><rect x="68" y="2" width="30" height="20" rx="4" fill="#2a2f40"/><rect x="68" y="25" width="30" height="23" rx="4" fill="#2a2f40"/>'},
   {k:'board',n:'Tableau',d:'Horloge, musique, carte',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="22" height="11" rx="3" fill="#2a2f40"/><rect x="13" y="15" width="22" height="22" rx="3" fill="#3a4160"/><rect x="13" y="39" width="22" height="9" rx="3" fill="#2a2f40"/><rect x="38" y="2" width="20" height="11" rx="3" fill="#2a2f40"/><rect x="38" y="15" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="38" y="30" width="20" height="7" rx="3" fill="#2a2f40"/><rect x="61" y="2" width="37" height="35" rx="4" fill="ACC"/><rect x="38" y="39" width="60" height="9" rx="3" fill="#2a2f40"/>'},

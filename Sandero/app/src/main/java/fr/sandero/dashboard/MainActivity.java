@@ -556,6 +556,8 @@ public class MainActivity extends Activity {
         public boolean wifiConnect(String ssid, String pwd) { return wifi.connect(ssid, pwd); }
         @JavascriptInterface
         public void wifiSettings() { wifi.openSettings(); }
+        @JavascriptInterface
+        public void wifiAuto(String ssid, String pwd, boolean on) { wifi.setAuto(ssid, pwd, on); }
 
         /* carte hors ligne */
         @JavascriptInterface
