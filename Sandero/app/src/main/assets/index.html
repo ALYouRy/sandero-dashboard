@@ -6932,7 +6932,7 @@ function endTrip(){
   finalizeTrip(r,false);
 }
 function finalizeTrip(r,recovered){
-  ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off','_g','_gt','_dm','_tf'].forEach(function(k){delete r[k]});
+  ['pv','bd','bt','hf','af','ov','_p','spc','spa','spn','off','_g','_gt','_dm','_tf','_gs','_gpsN','_gpsMiss'].forEach(function(k){delete r[k]});
   var trk=r.trk;delete r.trk;
   if(r.rpmMin===99999)r.rpmMin=0;
   if(r.vMin===99)r.vMin=0;
@@ -6996,13 +6996,16 @@ function trkEnds(id){
 }
 function geoDist(a,b){var r=Math.PI/180,x=(b[1]-a[1])*1e-5*r*Math.cos((a[0]+b[0])/2*1e-5*r),y=(b[0]-a[0])*1e-5*r;return Math.sqrt(x*x+y*y)*6371000}
 function trkTick(dt,s){
-  rec._gt=(rec._gt||0)+dt;if(rec._gt<3)return;var el=rec._gt;rec._gt=0;
+  rec._gt=(rec._gt||0)+dt;if(rec._gt<2)return;var el=rec._gt;rec._gt=0;
   var p=null;
   if(rec.demo){
     var dm=rec._dm||(rec._dm={lat:43.2965,lon:5.3698,h:Math.random()*6.28});
     dm.h+=(Math.random()-.5)*.5;var m=s*el/3.6;dm.lat+=m*Math.cos(dm.h)/111320;dm.lon+=m*Math.sin(dm.h)/(111320*Math.cos(dm.lat*Math.PI/180));
     p=[Math.round(dm.lat*1e5),Math.round(dm.lon*1e5)];
-  }else{var g=geoState();if(g&&g.ok&&g.age<=10&&g.acc<=60)p=[Math.round(g.lat*1e5),Math.round(g.lon*1e5)]}
+  }else{var g=geoState();
+    /* position nouvelle (numéro de position qui change) et assez précise ; l'âge sert seulement de garde-fou */
+    if(g&&g.ok&&g.acc<=60){var fresh=g.seq!=null?(g.seq!==rec._gs&&g.age<=30):g.age<=10;if(fresh){rec._gs=g.seq;p=[Math.round(g.lat*1e5),Math.round(g.lon*1e5)]}}
+    rec._gpsN=(rec._gpsN||0)+1;if(!p)rec._gpsMiss=(rec._gpsMiss||0)+1}
   if(!p)return;
   var t=rec.trk||(rec.trk=[]),q=t[t.length-1];
   var dd=q?geoDist(q,p):0;
@@ -7435,7 +7438,8 @@ function tripCells(r){
     cell('Régime moyen',Math.round(s.rpmAvg/10)*10)+cell('Régime max',Math.round(r.rpmMax/10)*10)+cell('Régime min',Math.round(r.rpmMin/10)*10)+
     cell('Freinages',r.brakes)+cell('Freinages brusques',r.hard)+cell('Accélérations vives',r.accel)+
     cell('Surrégimes',r.over)+cell('Température max',r.tMax?Math.round(r.tMax)+' °C':'–')+cell('Température moy.',s.tAvg?Math.round(s.tAvg)+' °C':'–')+
-    cell('Batterie min',r.vMin?fmtN(r.vMin,1)+' V':'–')+cell('Batterie moy.',s.vAvg?fmtN(s.vAvg,1)+' V':'–')+cell('Charge moteur moy.',Math.round(s.load)+' %');
+    cell('Batterie min',r.vMin?fmtN(r.vMin,1)+' V':'–')+cell('Batterie moy.',s.vAvg?fmtN(s.vAvg,1)+' V':'–')+cell('Charge moteur moy.',Math.round(s.load)+' %')+
+    cell('Points GPS',(function(){var P=trkGet(r.id),n=P?P.length:0;return n+(n&&r.dist>0.5&&n<r.dist*8?' (tracé incomplet)':'')})());
 }
 function sparkSVG(a){
   if(!a||a.length<2)return '';

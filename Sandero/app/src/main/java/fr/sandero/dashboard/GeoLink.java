@@ -10,6 +10,7 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.os.SystemClock;
 
 /**
  * Position GPS de l'autoradio : trajets favoris (départ et arrivée) et tracé des trajets sur la carte. Rien n'est envoyé ailleurs : la position reste dans l'appli.
@@ -20,6 +21,8 @@ class GeoLink implements LocationListener {
     private LocationManager lm;
     private Location best;
     private boolean on;
+    /** numéro de la dernière position reçue : l'appli sait ainsi si une position est nouvelle, même si l'horloge de l'autoradio est fausse */
+    private long seq;
 
     GeoLink(Activity act) {
         this.act = act;
@@ -48,11 +51,12 @@ class GeoLink implements LocationListener {
         try {
             lm = (LocationManager) act.getSystemService(Context.LOCATION_SERVICE);
             if (lm == null) return;
+            try { lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000L, 0f, this, Looper.getMainLooper()); } catch (Exception ignored) {}
             for (String p : lm.getProviders(true)) {
                 Location l = lm.getLastKnownLocation(p);
                 keep(l);
-                if (LocationManager.GPS_PROVIDER.equals(p) || LocationManager.NETWORK_PROVIDER.equals(p)) {
-                    lm.requestLocationUpdates(p, 3000L, 10f, this, Looper.getMainLooper());
+                if (LocationManager.NETWORK_PROVIDER.equals(p)) {
+                    lm.requestLocationUpdates(p, 2000L, 0f, this, Looper.getMainLooper());
                 }
             }
             on = true;
@@ -68,11 +72,25 @@ class GeoLink implements LocationListener {
         on = false;
     }
 
+    /** âge réel d'une position, en ms, mesuré sur l'horloge interne (fiable même si la date de l'autoradio est fausse) */
+    private static long ageMs(Location l) {
+        if (Build.VERSION.SDK_INT >= 17 && l.getElapsedRealtimeNanos() > 0) {
+            return Math.max(0, (SystemClock.elapsedRealtimeNanos() - l.getElapsedRealtimeNanos()) / 1000000L);
+        }
+        return Math.max(0, System.currentTimeMillis() - l.getTime());
+    }
+
     private void keep(Location l) {
         if (l == null) return;
-        if (best == null || l.getTime() > best.getTime() + 15000L
-                || (l.getTime() >= best.getTime() - 15000L && l.getAccuracy() < best.getAccuracy())) {
+        boolean gps = LocationManager.GPS_PROVIDER.equals(l.getProvider());
+        boolean bestGps = best != null && LocationManager.GPS_PROVIDER.equals(best.getProvider());
+        if (best == null) { best = l; seq++; return; }
+        long a = ageMs(l), b = ageMs(best);
+        /* une position GPS récente (moins de 6 s) n'est jamais remplacée par une position réseau, moins précise */
+        if (!gps && bestGps && b < 6000L) return;
+        if (a + 1000L < b || (a <= b + 15000L && l.getAccuracy() < best.getAccuracy()) || gps && !bestGps) {
             best = l;
+            seq++;
         }
     }
 
@@ -81,11 +99,13 @@ class GeoLink implements LocationListener {
         StringBuilder s = new StringBuilder("{\"perm\":").append(hasPerm());
         if (!on && hasPerm()) start();
         if (best != null) {
-            long age = Math.max(0, (System.currentTimeMillis() - best.getTime()) / 1000);
+            long age = ageMs(best) / 1000;
             s.append(",\"ok\":true,\"lat\":").append(best.getLatitude())
                     .append(",\"lon\":").append(best.getLongitude())
                     .append(",\"acc\":").append(Math.round(best.getAccuracy()))
-                    .append(",\"age\":").append(age);
+                    .append(",\"age\":").append(age)
+                    .append(",\"seq\":").append(seq)
+                    .append(",\"gps\":").append(LocationManager.GPS_PROVIDER.equals(best.getProvider()));
         } else {
             s.append(",\"ok\":false");
         }
@@ -101,8 +121,16 @@ class GeoLink implements LocationListener {
     public void onStatusChanged(String p, int st, Bundle b) {
     }
 
+    /* GPS activé après le lancement de l'appli : on s'y abonne aussi */
     @Override
+    @SuppressWarnings("MissingPermission")
     public void onProviderEnabled(String p) {
+        try {
+            if (lm != null && hasPerm() && (LocationManager.GPS_PROVIDER.equals(p) || LocationManager.NETWORK_PROVIDER.equals(p))) {
+                lm.requestLocationUpdates(p, 2000L, 0f, this, Looper.getMainLooper());
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
