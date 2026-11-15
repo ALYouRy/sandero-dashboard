@@ -7871,9 +7871,11 @@ function iphExtra(L){
     X.push(['c',qEnc(settings.fuel||''),b36((settings.disp||0)*10),b36(settings.redline||0),b36(settings.tank||50),b36((fuelSt.calib||1)*1000),qEnc(rev?rev.tsize:'')].join('.'));
     if(rev&&rev.km)X.push('o.'+b36(rev.km));
     /* totaux sur tout l'historique : trajets, km x10, litres x100, depuis (s), temps de conduite (s) */
-    var A=trips.filter(function(r){return showDemoTrips||!r.demo}),km=0,fu=0,du=0,t0=0;
-    A.forEach(function(r){km+=r.dist;fu+=r.fuel*(fuelSt.calib||1);du+=r.dur;if(!t0||r.t0<t0)t0=r.t0});
-    if(A.length)X.push(['s',b36(A.length),b36(km*10),b36(fu*100),b36(t0/1000),b36(du)].join('.'));
+    var A=trips.filter(function(r){return showDemoTrips||!r.demo}),km=0,fu=0,du=0,t0=0,eur=0,eok=true;
+    A.forEach(function(r){km+=r.dist;fu+=r.fuel*(fuelSt.calib||1);du+=r.dur;if(!t0||r.t0<t0)t0=r.t0;
+      /* argent dépensé : carburant du trajet (recalé sur les pleins) × prix réellement payé (même valeur que les champs 3 et 22 des trajets) */
+      var pr=tripPrice(r),tf=tripFuel(r).fuel;if(pr>0&&isFinite(tf))eur+=tf*pr;else eok=false});
+    if(A.length)X.push(['s',b36(A.length),b36(km*10),b36(fu*100),b36(t0/1000),b36(du),eok&&isFinite(eur)?b36(eur*100):''].join('.'));
     /* voiture garée : fin du dernier trajet tracé (lat/lon x1e5, base36 signée) + heure */
     var lastR=A.slice().sort(function(a,b){return b.t0-a.t0}).filter(function(r){var P=trkGet(r.id);return P&&P.length>1})[0];
     if(lastR){var P=trkGet(lastR.id),e=P[P.length-1];X.push(['p',sb36(e[0]),sb36(e[1]),b36((lastR.t1||lastR.t0+lastR.dur*1000)/1000)].join('.'))}
