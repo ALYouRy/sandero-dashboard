@@ -77,6 +77,11 @@ public class MainActivity extends Activity {
 
         web.setWebViewClient(new WebViewClient() {
             @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView v, android.webkit.WebResourceRequest req) {
+                android.webkit.WebResourceResponse r = MapCache.intercept(MainActivity.this, req.getUrl().toString());
+                return r != null ? r : super.shouldInterceptRequest(v, req);
+            }
+            @Override
             public boolean shouldOverrideUrlLoading(WebView v, String url) {
                 if (url != null && url.startsWith("intent:")) {
                     launchFromIntentUrl(url);
@@ -534,6 +539,16 @@ public class MainActivity extends Activity {
                 return "{}";
             }
         }
+
+        /* carte hors ligne */
+        @JavascriptInterface
+        public boolean mapDl(double la0, double lo0, double la1, double lo1, int zmax) { return MapCache.download(MainActivity.this, la0, lo0, la1, lo1, zmax); }
+        @JavascriptInterface
+        public void mapDlStop() { MapCache.stop = true; }
+        @JavascriptInterface
+        public String mapState() { return MapCache.state(MainActivity.this); }
+        @JavascriptInterface
+        public void mapClear() { if (!MapCache.run) MapCache.clear(MainActivity.this); }
 
         /* pochette de l'album en cours (JPEG 240 px, base64), vide s'il n'y en a pas */
         @JavascriptInterface

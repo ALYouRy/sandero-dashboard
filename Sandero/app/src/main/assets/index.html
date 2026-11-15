@@ -1112,7 +1112,9 @@ body[data-lay="board"] .hm-play,body[data-lay="cockpit"] .hm-play{grid-column:3;
 body[data-lay="board"] #mu-next,body[data-lay="cockpit"] #mu-next{grid-column:4;align-self:center}
 /* carte */
 .hb-map{grid-area:map;position:relative;overflow:hidden;padding:0;text-decoration:none;color:var(--fg);min-height:0;border-radius:26px;background:radial-gradient(120% 90% at 70% 20%,rgba(var(--accent-rgb),.10),transparent 60%),#0b0d16}
-.hb-map canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+.hb-map canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#hb-gl{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity .6s}#hb-gl.on{opacity:1}
+#hb-gl .maplibregl-canvas{outline:none}
 .hb-mo{position:absolute;left:12px;right:12px;bottom:12px;padding:11px 15px;border-radius:18px;background:rgba(255,255,255,.92);color:#101218;display:flex;flex-direction:column}
 .hb-mo b{font-size:18px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hb-mo small{font-size:12px;color:#5b6070;font-weight:600}
@@ -1140,6 +1142,8 @@ body[data-lay="board"] .hm-bt,body[data-lay="cockpit"] .hm-bt{grid-area:bar;gap:
 body[data-lay="board"] .hm-b,body[data-lay="cockpit"] .hm-b{min-height:0;padding:10px 12px}
 body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
 /* choix de la disposition (Réglages) */
+.off-bar{height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin:6px 0}.off-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+.off-r{margin:4px 0}
 .set-lay{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:10px 0 6px}
 .set-lay button{display:flex;flex-direction:column;gap:8px;text-align:left;padding:10px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg)}
 .set-lay button[aria-pressed="true"]{border-color:rgba(var(--accent-rgb),.8);box-shadow:0 0 0 1px rgba(var(--accent-rgb),.5),0 0 18px rgba(var(--accent-rgb),.25)}
@@ -1300,7 +1304,7 @@ body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
           <div class="hb-sub"><span><small>Rapport</small><b id="hb-g">–</b></span><span><small>Régime</small><b id="hb-r">–</b></span></div>
         </div>
         <a class="gl hb-map" data-pk="nav" href="intent://#Intent;package=com.waze;end" aria-label="Ouvrir la navigation">
-          <canvas id="hb-cv"></canvas>
+          <div id="hb-gl"></div><canvas id="hb-cv"></canvas>
           <div class="hb-mo"><b id="hb-mt">–</b><small id="hb-ms">Touche pour ouvrir la navigation</small></div>
           <span class="hb-mlab" id="hb-ml">Trajet en cours</span>
         </a>
@@ -8382,6 +8386,7 @@ var SCHEMA=[
   {k:'gpsTrack',l:'Tracé GPS des trajets',h:'Pour revoir sur une carte par où tu es passée.',type:'seg',o:boolOpts()},
   {k:'mapStyle',l:'Style de la carte',type:'seg',o:[['neon','Néon'],['sombre','Sombre'],['or','Doré'],['clair','Clair']]},
   {k:'mapEngine',l:'Fond de carte',h:'« Simple » utilise des images : moins joli, mais plus léger pour l’autoradio et sans WebGL.',type:'seg',o:[['auto','Détaillé'],['raster','Simple']]},
+  {type:'offmap'},
   {k:'iphPrompt',l:'À la fin d’un trajet',h:'« QR automatique » : après le résumé du trajet, les codes s’affichent et défilent s’il y a des trajets à envoyer (jamais en roulant, fermeture au bout de 3 min).',type:'seg',o:[['auto','QR automatique'],['btn','Bouton seulement'],['off','Rien']]},
   {k:'iphAuto',l:'Codes qui défilent tout seuls',h:'Le scanner de l’appli iPhone les récupère sans toucher à rien. Bouton ❚❚ pour arrêter.',type:'seg',o:boolOpts()},
   {k:'iphZip',l:'Codes compressés',h:'2 fois moins de codes. L’appli iPhone 2.23 ou plus récente sait les lire.',type:'seg',o:boolOpts()},
@@ -8533,6 +8538,7 @@ function buildSettings(){
       else if(it.type==='themes')card.appendChild(themeBlock());
       else if(it.type==='harms'){var hh=document.createElement('p');hh.className='set-sub';hh.innerHTML='<b>Harmonie de couleurs</b><small>Pour le thème Néon : fond, lueurs, couleur d’accent, LED du plateau et carte assortis.</small>';card.appendChild(hh);card.appendChild(harmBlock())}
       else if(it.type==='lays'){var lh=document.createElement('p');lh.className='set-sub';lh.innerHTML='<b>Disposition de l’accueil</b><small>Classique : la voiture en grand. Tableau et Cockpit : horloge, vitesse, musique avec pochette, carte du trajet et conducteur.</small>';card.appendChild(lh);card.appendChild(layBlock())}
+      else if(it.type==='offmap')card.appendChild(offBlock());
       else if(it.type==='glasspre')card.appendChild(glassBlock());
       else if(it.type==='devinfo'){var di=document.createElement('p');di.className='msg';di.id='dev-info';di.style.padding='0 0 10px';di.textContent='Autoradio : '+devText();card.appendChild(di)}
       else if(it.type==='upd'){var ub=document.createElement('div');ub.id='upd-box';card.appendChild(ub);setTimeout(updUI,0)}
@@ -8757,48 +8763,113 @@ function hbLastTrack(){
   for(var i=0;i<A.length&&i<6;i++){var P=trkGet(A[i].id);if(A[i].demo&&(!P||P.length<2))P=trkFake(A[i]);if(P&&P.length>1)return {P:P,live:false,r:A[i]}}
   return null;
 }
+/* carte de l'accueil : la même carte que dans l'appli (MapLibre + OpenFreeMap), servie hors ligne par l'autoradio quand elle a été téléchargée.
+   Sans WebGL ou en fond « Simple » : tracé seul sur fond quadrillé. */
+function hbMlStart(){
+  if(HB.mlTry||settings.mapEngine==='raster'||settings.hbMap===false)return;HB.mlTry=true;
+  var gl=null;try{var t=document.createElement('canvas');gl=t.getContext('webgl')||t.getContext('experimental-webgl')}catch(e){}
+  if(!gl)return;
+  var host=$('#hb-gl');HB.mlStyle=mpStyle();
+  Promise.all([maplibre(),styleFor(HB.mlStyle)]).then(function(res){
+    var m;try{m=new res[0].Map({container:host,style:res[1],center:[5.37,43.296],zoom:11,interactive:false,attributionControl:false,fadeDuration:0,antialias:false,maxZoom:17})}catch(e){return}
+    m.once('load',function(){HB.ml=m;host.classList.add('on');HB.key='';hbMap()});
+    m.on('moveend',function(){HB.ov='';hbOverlay()});m.on('resize',function(){HB.ov='';hbOverlay()});
+    m.on('error',function(){});
+  }).catch(function(){HB.mlTry=false;HB.mlRetry=Date.now()});
+}
 function hbMap(){
   var cv=$('#hb-cv');if(!cv||!cv.offsetWidth)return;
-  var T=hbLastTrack(),dpr=Math.min(1.5,window.devicePixelRatio||1),W=cv.offsetWidth,H=cv.offsetHeight;
-  var key=(T?(T.r.id||T.r.t0)+':'+T.P.length:'none')+':'+W+'x'+H+':'+settings.accent;
+  if(!HB.mlTry&&(!HB.mlRetry||Date.now()-HB.mlRetry>60000))hbMlStart();
+  if(HB.ml&&HB.mlStyle!==mpStyle()){HB.mlStyle=mpStyle();styleFor(HB.mlStyle).then(function(st){try{HB.ml.setStyle(st)}catch(e){}}).catch(function(){})}
+  var T=hbLastTrack(),W=cv.offsetWidth,H=cv.offsetHeight;HB.T=T;
   if(T&&T.live){setTx('hb-ml','Trajet en cours');setTx('hb-mt','En route · '+fmtN(T.r.dist||0,1)+' km');setTx('hb-ms',fmtDur(T.r.dur||0)+' de conduite · touche pour la navigation')}
   else if(T){setTx('hb-ml','Dernier trajet');setTx('hb-mt',fmtN(T.r.dist,1)+' km · '+fmtDur(T.r.dur));setTx('hb-ms','Garée '+hbAgo(T.r.t1||T.r.t0+T.r.dur*1000)+' · touche pour la navigation')}
   else{setTx('hb-ml','Carte');setTx('hb-mt','Pas encore de tracé GPS');setTx('hb-ms','Touche pour ouvrir la navigation')}
+  var key=(T?(T.r.id||T.r.t0)+':'+T.P.length:'none')+':'+W+'x'+H+':'+(HB.ml?'ml':'cv');
   if(key===HB.key)return;HB.key=key;
+  if(HB.ml){
+    try{HB.ml.resize()}catch(e){}
+    if(T){var la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;T.P.forEach(function(p){var a=p[0]/1e5,o=p[1]/1e5;if(a<la0)la0=a;if(a>la1)la1=a;if(o<lo0)lo0=o;if(o>lo1)lo1=o});
+      /* trajet en cours : on suit la voiture de près ; sinon tout le trajet */
+      if(T.live){la0=1e9;la1=-1e9;lo0=1e9;lo1=-1e9;T.P.slice(-80).forEach(function(p){var a=p[0]/1e5,o=p[1]/1e5;if(a<la0)la0=a;if(a>la1)la1=a;if(o<lo0)lo0=o;if(o>lo1)lo1=o})}
+      try{HB.ml.fitBounds([[lo0,la0],[lo1,la1]],{padding:{top:40,bottom:96,left:30,right:30},duration:0,maxZoom:T.live?15.5:16})}catch(e){}}
+    else{var g=geoState();try{HB.ml.jumpTo({center:g&&g.ok?[g.lon,g.lat]:[5.37,43.296],zoom:g&&g.ok?14:11})}catch(e){}}
+  }
+  HB.ov='';hbOverlay();
+}
+/* tracé dessiné par-dessus la carte (même rendu que la carte des trajets) */
+function hbOverlay(){
+  var cv=$('#hb-cv');if(!cv||!cv.offsetWidth)return;
+  var T=HB.T,dpr=Math.min(1.5,window.devicePixelRatio||1),W=cv.offsetWidth,H=cv.offsetHeight,ml=HB.ml;
+  var ok=(T?(T.r.id||T.r.t0)+':'+T.P.length:'none')+':'+W+'x'+H+':'+settings.accent+':'+(ml?ml.getCenter().lng.toFixed(6)+ml.getZoom().toFixed(3):'');
+  if(ok===HB.ov)return;HB.ov=ok;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
   var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
-  var acc=settings.accent||'#00e5ff';
-  /* quadrillage façon plan */
-  c.strokeStyle='rgba(255,255,255,.045)';c.lineWidth=1;
-  for(var x=((W/2)%38);x<W;x+=38){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}
-  for(var y=((H/2)%38);y<H;y+=38){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke()}
+  var acc=settings.accent||'#00e5ff',co=mpRouteCols();
+  if(!ml){
+    c.strokeStyle='rgba(255,255,255,.045)';c.lineWidth=1;
+    for(var x=((W/2)%38);x<W;x+=38){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}
+    for(var y=((H/2)%38);y<H;y+=38){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke()}
+  }
   if(!T)return;
-  var P=T.P,la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;
-  P.forEach(function(p){if(p[0]<la0)la0=p[0];if(p[0]>la1)la1=p[0];if(p[1]<lo0)lo0=p[1];if(p[1]>lo1)lo1=p[1]});
-  var kx=Math.cos((la0+la1)/2*Math.PI/180)*111320,ky=110540;
-  var w=Math.max((lo1-lo0)*kx,300),h=Math.max((la1-la0)*ky,300);
-  var padB=86,pad=26,sc=Math.min((W-pad*2)/w,(H-pad-padB)/h);
-  var cx=(lo0+lo1)/2,cy=(la0+la1)/2,ox=W/2,oy=pad+(H-pad-padB)/2;
-  function X(p){return ox+(p[1]-cx)*kx*sc}function Y(p){return oy-(p[0]-cy)*ky*sc}
-  /* rues fictives autour du trajet : quelques îlots pour donner l'impression d'un plan */
-  c.fillStyle='rgba(255,255,255,.035)';
-  var seed=Math.floor(Math.abs(cx*1e4+cy*1e4))%9973;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647}
-  for(var i=0;i<26;i++){var bx=rnd()*W,by=rnd()*H,bw=20+rnd()*50,bh=14+rnd()*36;c.beginPath();c.rect(bx,by,bw,bh);c.fill()}
-  function path(){c.beginPath();P.forEach(function(p,i){var x=X(p),y=Y(p);if(i)c.lineTo(x,y);else c.moveTo(x,y)})}
+  var P=T.P,XY;
+  if(ml)XY=P.map(function(p){var q=ml.project([p[1]/1e5,p[0]/1e5]);return [q.x,q.y]});
+  else{
+    var la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;P.forEach(function(p){var a=p[0]/1e5,o=p[1]/1e5;if(a<la0)la0=a;if(a>la1)la1=a;if(o<lo0)lo0=o;if(o>lo1)lo1=o});
+    var kx=Math.cos((la0+la1)/2*Math.PI/180)*111320,ky=110540,w=Math.max((lo1-lo0)*kx,300),h=Math.max((la1-la0)*ky,300);
+    var pad=26,padB=90,sc=Math.min((W-pad*2)/w,(H-pad-padB)/h),cx=(lo0+lo1)/2,cy=(la0+la1)/2,ox=W/2,oy=pad+(H-pad-padB)/2;
+    XY=P.map(function(p){return [ox+(p[1]/1e5-cx)*kx*sc,oy-(p[0]/1e5-cy)*ky*sc]});
+  }
+  function path(){c.beginPath();XY.forEach(function(q,i){if(i)c.lineTo(q[0],q[1]);else c.moveTo(q[0],q[1])})}
   c.lineJoin='round';c.lineCap='round';
-  path();c.strokeStyle='rgba(0,0,0,.55)';c.lineWidth=9;c.stroke();
-  path();c.strokeStyle=acc;c.globalAlpha=.25;c.lineWidth=12;c.stroke();c.globalAlpha=1;
-  path();c.strokeStyle=acc;c.lineWidth=4.5;c.stroke();
-  /* départ */
-  var a=P[0];c.beginPath();c.arc(X(a),Y(a),5,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=2.5;c.strokeStyle=acc;c.stroke();
-  /* position (flèche dans le sens de la marche) */
-  var e=P[P.length-1],b=P[Math.max(0,P.length-4)],ang=Math.atan2(X(e)-X(b),-(Y(e)-Y(b)));
-  var ex=X(e),ey=Y(e);
-  var g=c.createRadialGradient(ex,ey,0,ex,ey,30);g.addColorStop(0,'rgba(90,169,255,.45)');g.addColorStop(1,'rgba(90,169,255,0)');c.fillStyle=g;c.beginPath();c.arc(ex,ey,30,0,7);c.fill();
-  c.beginPath();c.arc(ex,ey,14,0,7);c.fillStyle='#2f7bff';c.fill();c.lineWidth=3;c.strokeStyle='#fff';c.stroke();
-  c.save();c.translate(ex,ey);c.rotate(ang);c.beginPath();c.moveTo(0,-7);c.lineTo(5.5,5);c.lineTo(0,2.4);c.lineTo(-5.5,5);c.closePath();c.fillStyle='#fff';c.fill();c.restore();
+  path();c.globalAlpha=.32;c.strokeStyle=co[1];c.lineWidth=15;c.stroke();c.globalAlpha=.5;c.lineWidth=8.5;c.stroke();c.globalAlpha=1;c.strokeStyle=co[0];c.lineWidth=4.5;c.stroke();
+  var a=XY[0];c.beginPath();c.arc(a[0],a[1],8,0,7);c.fillStyle='#fff';c.fill();c.beginPath();c.arc(a[0],a[1],6,0,7);c.fillStyle='#34d17a';c.fill();
+  var e=XY[XY.length-1],b=XY[Math.max(0,XY.length-4)],ang=Math.atan2(e[0]-b[0],-(e[1]-b[1]));
+  var g=c.createRadialGradient(e[0],e[1],0,e[0],e[1],30);g.addColorStop(0,'rgba(90,169,255,.45)');g.addColorStop(1,'rgba(90,169,255,0)');c.fillStyle=g;c.beginPath();c.arc(e[0],e[1],30,0,7);c.fill();
+  c.beginPath();c.arc(e[0],e[1],14,0,7);c.fillStyle='#2f7bff';c.fill();c.lineWidth=3;c.strokeStyle='#fff';c.stroke();
+  c.save();c.translate(e[0],e[1]);c.rotate(ang);c.beginPath();c.moveTo(0,-7);c.lineTo(5.5,5);c.lineTo(0,2.4);c.lineTo(-5.5,5);c.closePath();c.fillStyle='#fff';c.fill();c.restore();
 }
 function hbAgo(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<1)return 'à l’instant';if(m<60)return 'il y a '+m+' min';var h=Math.round(m/60);if(h<24)return 'il y a '+h+' h';var d=Math.round(h/24);return 'il y a '+d+' jour'+(d>1?'s':'')}
+/* ---------- carte hors ligne (téléchargée une fois avec internet, puis servie par l'autoradio) ---------- */
+function offCenter(){
+  var g=null;try{g=geoState()}catch(e){}if(g&&g.ok)return [g.lat,g.lon,'ta position actuelle'];
+  var T=hbLastTrack();if(T){var e=T.P[T.P.length-1];return [e[0]/1e5,e[1]/1e5,'ton dernier trajet']}
+  return [43.296,5.37,'Marseille'];
+}
+function offBox(km){var c=offCenter(),dl=km/110.574,dn=km/(111.32*Math.cos(c[0]*Math.PI/180));return [c[0]-dl,c[1]-dn,c[0]+dl,c[1]+dn,c[2]]}
+function offTiles(b,zmax){var n=0;for(var z=9;z<=zmax;z++){var x0=Math.floor(mpLon2x(b[1],z)/256),x1=Math.floor(mpLon2x(b[3],z)/256),y0=Math.floor(mpLat2y(b[2],z)/256),y1=Math.floor(mpLat2y(b[0],z)/256);n+=(x1-x0+1)*(y1-y0+1)}return n}
+function offMo(b){return b>=1e9?fmtN(b/1e9,1)+' Go':Math.round(b/1e6)+' Mo'}
+function offBlock(){
+  var d=document.createElement('div');d.className='off-box';
+  var nat=!!(window.AndroidApp&&window.AndroidApp.mapDl);
+  d.innerHTML='<p class="set-sub"><b>Carte hors ligne</b><small>La même carte que dans l’appli (trajets et accueil), utilisable sans internet. Télécharge-la une fois avec internet (Wi-Fi ou partage de connexion) : la zone autour de toi en détail, et toute la France en vue large. Les endroits que tu regardes avec internet sont aussi gardés automatiquement.</small></p>'+
+    '<div class="seg off-r">'+[[15,'15 km'],[30,'30 km'],[60,'60 km'],[100,'100 km']].map(function(o){return '<button type="button" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'+
+    '<p class="off-est msg"></p><div class="off-bar" hidden><i></i></div><p class="off-st msg"></p>'+
+    '<div class="ri-b"><button type="button" class="btn off-go">Télécharger la carte</button> <button type="button" class="btn ghost off-stop" hidden>Arrêter</button> <button type="button" class="btn ghost off-clr">Effacer</button></div>';
+  var R=+settings.offR||30;
+  function est(){
+    $$('.off-r button',d).forEach(function(b){b.setAttribute('aria-pressed',+b.getAttribute('data-v')===R?'true':'false')});
+    var b=offBox(R),n=offTiles(b,14);
+    $('.off-est',d).textContent='Zone de '+(R*2)+' × '+(R*2)+' km autour de '+b[4]+' · environ '+n+' tuiles, '+offMo(n*38000+25e6)+' (selon la densité des villes).';
+  }
+  $$('.off-r button',d).forEach(function(b){b.addEventListener('click',function(){R=+b.getAttribute('data-v');settings.offR=R;saveSettings();est()})});
+  function poll(){
+    if(!nat){$('.off-st',d).textContent='Disponible dans l’appli installée sur l’autoradio.';return}
+    var st={};try{st=JSON.parse(window.AndroidApp.mapState())}catch(e){}
+    var bar=$('.off-bar',d);bar.hidden=!st.run;if(st.total)$('i',bar).style.width=Math.round(st.done/st.total*100)+'%';
+    $('.off-go',d).hidden=!!st.run;$('.off-stop',d).hidden=!st.run;$('.off-clr',d).disabled=!!st.run;
+    $('.off-st',d).textContent=(st.run?(st.msg||'')+' '+st.done+' / '+st.total+' ('+offMo(st.bytes||0)+')':(st.msg?st.msg+' · ':''))+(st.run?'':'Carte gardée sur l’autoradio : '+offMo(st.size||0)+'.');
+    clearTimeout(d._t);if(document.body.contains(d))d._t=setTimeout(poll,st.run?1000:5000);
+  }
+  $('.off-go',d).addEventListener('click',function(){
+    if(!nat){$('.off-st',d).textContent='Disponible dans l’appli installée sur l’autoradio.';return}
+    var b=offBox(R);try{window.AndroidApp.mapDl(b[0],b[1],b[2],b[3],14)}catch(e){}setTimeout(poll,300);
+  });
+  $('.off-stop',d).addEventListener('click',function(){try{window.AndroidApp.mapDlStop()}catch(e){}setTimeout(poll,300)});
+  $('.off-clr',d).addEventListener('click',function(){if(!confirm('Effacer la carte hors ligne gardée sur l’autoradio ?'))return;try{window.AndroidApp.mapClear()}catch(e){}setTimeout(poll,300)});
+  est();setTimeout(poll,50);
+  return d;
+}
 var LAYS=[
   {k:'classic',n:'Classique',d:'La voiture en grand',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="52" height="34" rx="4" fill="#3a4160"/><rect x="13" y="39" width="52" height="9" rx="3" fill="#2a2f40"/><rect x="68" y="2" width="30" height="20" rx="4" fill="#2a2f40"/><rect x="68" y="25" width="30" height="23" rx="4" fill="#2a2f40"/>'},
   {k:'board',n:'Tableau',d:'Horloge, musique, carte',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="22" height="11" rx="3" fill="#2a2f40"/><rect x="13" y="15" width="22" height="22" rx="3" fill="#3a4160"/><rect x="13" y="39" width="22" height="9" rx="3" fill="#2a2f40"/><rect x="38" y="2" width="20" height="11" rx="3" fill="#2a2f40"/><rect x="38" y="15" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="38" y="30" width="20" height="7" rx="3" fill="#2a2f40"/><rect x="61" y="2" width="37" height="35" rx="4" fill="ACC"/><rect x="38" y="39" width="60" height="9" rx="3" fill="#2a2f40"/>'},
