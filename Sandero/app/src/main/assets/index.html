@@ -5592,7 +5592,7 @@ function tMin(t){var d=new Date(t);return d.getHours()*60+d.getMinutes()}
 function minDiff(a,b){var d=Math.abs(a-b)%1440;return Math.min(d,1440-d)}
 function tripEnds(r){
   if(r.a&&r.b)return [r.a,r.b];
-  try{var P=trkGet(r.id);if(P&&P.length>1){var a=P[0],b=P[P.length-1];return [r.a||[a[0]/1e5,a[1]/1e5],r.b||[b[0]/1e5,b[1]/1e5]]}}catch(e){}
+  try{var E=trkEnds(r.id);if(E)return [r.a||[E[0]/1e5,E[1]/1e5],r.b||[E[2]/1e5,E[3]/1e5]]}catch(e){}
   return [r.a,r.b];
 }
 function favScore(f,r){
@@ -6981,10 +6981,19 @@ function trkDec(t){
     a.push(p)}
   return a;
 }
-function trkSave(id,a){var T=trkAll();T[id]=trkEnc(a);var k=Object.keys(T).sort(function(x,y){return +y-+x});k.slice(FST?600:120).forEach(function(x){delete T[x]});
+function trkSave(id,a){var T=trkAll();T[id]=trkEnc(a);delete TRKE[id];var k=Object.keys(T).sort(function(x,y){return +y-+x});k.slice(FST?600:120).forEach(function(x){delete T[x]});
   for(var i=0;i<6;i++){try{if(kvSet(TRKKEY,JSON.stringify(T)))return;throw 0}catch(e){k=Object.keys(T).sort(function(x,y){return +x-+y});if(k.length<=1)return;k.slice(0,Math.ceil(k.length/4)).forEach(function(x){delete T[x]})}}}
-function trkDel(id){var T=trkAll();if(T[id]!=null){delete T[id];kvSet(TRKKEY,JSON.stringify(T))}}
-function trkGet(id){var T=trkAll();return T[id]!=null?trkDec(T[id]):null}
+function trkDel(id){var T=trkAll();delete TRKE[id];if(TRKL.id===id)TRKL={};if(T[id]!=null){delete T[id];kvSet(TRKKEY,JSON.stringify(T))}}
+/* le dernier tracé décodé est gardé en mémoire (la carte et les QR le redemandent plusieurs fois) */
+var TRKL={},TRKE={};
+function trkGet(id){var T=trkAll(),t=T[id];if(t==null)return null;if(TRKL.id===id&&TRKL.t===t)return TRKL.p.map(function(q){return q.slice()});var p=trkDec(t);TRKL={id:id,t:t,p:p};return p.map(function(q){return q.slice()})}
+/* départ et arrivée d'un tracé, sans tout décoder, et gardés en mémoire (sert à reconnaître les favoris) */
+function trkEnds(id){
+  if(id in TRKE)return TRKE[id];
+  var T=trkAll(),t=T[id],e=null;
+  if(t!=null){var v=String(t).split('|')[0].split(','),n=v.length>>1;if(n>1){var l=0,o=0;for(var i=0;i<n;i++){l+=+v[2*i];o+=+v[2*i+1]}e=[+v[0],+v[1],l,o]}}
+  return TRKE[id]=e;
+}
 function geoDist(a,b){var r=Math.PI/180,x=(b[1]-a[1])*1e-5*r*Math.cos((a[0]+b[0])/2*1e-5*r),y=(b[0]-a[0])*1e-5*r;return Math.sqrt(x*x+y*y)*6371000}
 function trkTick(dt,s){
   rec._gt=(rec._gt||0)+dt;if(rec._gt<3)return;var el=rec._gt;rec._gt=0;
@@ -7469,7 +7478,7 @@ function weekCheck(){
 function visTrips(){return trips.filter(function(r){return showDemoTrips||!r.demo})}
 /* Historique en deux onglets : les trajets pas encore récupérés sur l'iPhone, et ceux déjà récupérés
    (récupéré = envoyé par QR code puis validé avec « C'est envoyé »). */
-var tpTab='new';
+var tpTab='new',tpMax=40;
 function iphLast(){var l=0;try{l=+localStorage.getItem(IPHSYNC)||0}catch(e){}return l}
 function tripsBuild(){
   var all=visTrips(),host=$('#tp-list'),last=iphLast();host.innerHTML='';
@@ -7478,14 +7487,16 @@ function tripsBuild(){
   if(tb){var bs=tb.querySelectorAll('button');
     bs[0].innerHTML='À récupérer <span class="tp-n">'+nw.length+'</span>';bs[1].innerHTML='Récupérés sur l’iPhone <span class="tp-n">'+sent.length+'</span>';
     Array.prototype.forEach.call(bs,function(b){b.setAttribute('aria-pressed',b.getAttribute('data-tt')===tpTab?'true':'false');
-      b.onclick=function(){tpTab=b.getAttribute('data-tt');tripsBuild()}})}
+      b.onclick=function(){tpTab=b.getAttribute('data-tt');tpMax=40;tripsBuild()}})}
   var act=$('#tp-act');
   if(act){act.innerHTML=tpTab==='new'&&nw.length?'<div class="tp-send"><span>'+nw.length+' trajet'+(nw.length>1?'s':'')+' pas encore sur l’iPhone</span><button type="button" class="btn" id="tp-send">Envoyer vers l’iPhone</button></div>':'';
     var sb=$('#tp-send');if(sb)sb.onclick=function(){iphOpen(false)}}
   var list=tpTab==='new'?nw:sent;
   if(!all.length){host.innerHTML='<p class="msg" style="padding:12px 0">Aucun trajet pour l’instant. Roule (ou lance le mode démo) : il s’enregistre automatiquement.</p>'}
   else if(!list.length)host.innerHTML='<p class="msg" style="padding:12px 0">'+(tpTab==='new'?'Tout est déjà récupéré sur l’iPhone. Les prochains trajets arriveront ici.':'Aucun trajet récupéré pour l’instant. Envoie-les depuis l’onglet « À récupérer », puis touche « C’est envoyé » une fois scannés.')+'</p>';
-  list.forEach(function(r){
+  /* on n'affiche que les 40 premiers : le reste à la demande (liste plus rapide sur l'autoradio) */
+  var shown=list.slice(0,tpMax);
+  shown.forEach(function(r){
     var s=tstat(r),d=new Date(r.t0),row=document.createElement('div');row.className='tp-row';
     var dt=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})+' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
     row.innerHTML='<button type="button" class="tp-h"><span><b></b><small></small></span><span class="tp-k"></span></button><div class="tp-d"><div class="tp-grid"></div><div class="tp-sp"></div><div class="ri-b"><button type="button" class="btn" data-a="map">Voir sur la carte</button><button type="button" class="btn ghost" data-a="tag">Étiquette : aucune</button><button type="button" class="btn ghost" data-a="fav">Ajouter aux favoris</button><button type="button" class="btn ghost" data-a="del">Supprimer ce trajet</button></div></div>';
@@ -7509,6 +7520,7 @@ function tripsBuild(){
     });
     host.appendChild(row);
   });
+  if(list.length>shown.length){var mb=document.createElement('button');mb.type='button';mb.className='btn ghost';mb.style.cssText='width:100%;margin-top:10px';mb.textContent='Afficher les '+Math.min(40,list.length-shown.length)+' suivants ('+(list.length-shown.length)+' restants)';mb.onclick=function(){tpMax+=40;tripsBuild()};host.appendChild(mb)}
   var n=list.length,km=0;list.forEach(function(r){km+=r.dist});
   setTx('tp-sum',n?n+' trajet'+(n>1?'s':'')+' · '+fmtN(km,1)+' km':'Rien d’enregistré');
   tdBuild();
