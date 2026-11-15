@@ -1150,6 +1150,46 @@ body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
 .set-lay svg{width:100%;height:auto;display:block;border-radius:9px;background:#0b0d16}
 .set-lay b{font-size:15px}.set-lay small{display:block;font-size:12px;color:var(--fg-3);margin-top:1px}
 </style>
+<style>
+/* ===== 3.8 : Wi-Fi ===== */
+.wf-ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.wf-ic .w0{fill:currentColor;stroke:none}
+.wf-ic .wx{display:none;stroke:#ff5a5a}
+[data-s="off"] .wf-ic,[data-s="none"] .wf-ic{opacity:.55}
+[data-s="off"] .wf-ic .wx{display:block}
+[data-s="l0"] .w1,[data-s="l0"] .w2,[data-s="l0"] .w3,[data-s="l1"] .w2,[data-s="l1"] .w3,[data-s="l2"] .w3,[data-s="none"] .w1,[data-s="none"] .w2,[data-s="none"] .w3{opacity:.25}
+.hb-wf{font:inherit;font-size:13px;font-weight:700;color:var(--fg);cursor:pointer}
+.hb-wf[data-net="1"]{color:#34d17a;border-color:rgba(52,209,122,.35)}
+.hb-wf[data-net="0"][data-s^="l"]{color:#ffb340;border-color:rgba(255,179,64,.35)}
+.hb-wf em{max-width:16ch;overflow:hidden;text-overflow:ellipsis;color:var(--fg)}
+.hm-wf{width:44px;height:30px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:var(--fg);display:flex;align-items:center;justify-content:center;margin:-6px 0 0;padding:0;flex:0 0 auto}
+.hm-wf[data-net="1"]{color:#34d17a}.hm-wf[data-net="0"][data-s^="l"]{color:#ffb340}
+body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
+.wf-p{width:min(940px,100%)}
+.wf-st{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:14px}
+.wf-st .wf-ic{width:30px;height:30px;flex:0 0 auto}
+.wf-st[data-net="1"]{color:#34d17a}.wf-st[data-net="0"][data-s^="l"]{color:#ffb340}
+.wf-st span{flex:1;min-width:0;color:var(--fg)}.wf-st b{display:block;font-size:17px}.wf-st small{display:block;font-size:13px;color:var(--fg-2);margin-top:2px}
+.wf-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.wf-col h3{font-size:15px;margin:0 0 8px;display:flex;align-items:center;justify-content:space-between}
+.wf-col h3 .link{font-size:13px}
+.wf-hint{font-size:13px;color:var(--fg-2);margin:0 0 10px;line-height:1.4}
+.wf-l{display:block;font-size:12.5px;color:var(--fg-2);font-weight:600;margin-bottom:8px}
+.wf-in{display:block;width:100%;box-sizing:border-box;text-align:left;margin-top:4px}
+.wf-b{display:flex;gap:8px;margin-top:8px}
+.wf-msg{font-size:13px;min-height:18px;margin:8px 0 0;color:var(--fg-2)}
+.wf-help{margin-top:6px;font-size:13px;color:var(--fg-2)}.wf-help summary{cursor:pointer;font-weight:700;color:var(--fg)}
+.wf-help ol{margin:8px 0 0;padding-left:20px;line-height:1.45}.wf-help li{margin-bottom:5px}
+.wf-list{display:flex;flex-direction:column;gap:6px;max-height:min(300px,42vh);overflow:auto}
+.wf-list button{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg);font:inherit;font-size:14.5px;text-align:left}
+.wf-list button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wf-list button small{font-size:11.5px;color:var(--fg-3)}
+.wf-list button[data-cur="1"]{border-color:rgba(52,209,122,.5)}
+.wf-list .wf-e{font-size:13px;color:var(--fg-2);padding:8px 2px}
+.wf-pw{margin-top:10px;padding:10px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}
+.wf-sys{margin-top:12px;width:100%}
+@media (max-width:760px){.wf-cols{grid-template-columns:1fr}}
+</style>
 </head><body>
 
 <div id="drawer" hidden>
@@ -1242,6 +1282,7 @@ body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
       <div class="hm">
         <div class="hm-rail">
           <div class="hm-rt0" id="hm-time2">--:--</div>
+          <button type="button" class="hm-wf wf-open" id="hm-wf" data-s="off" aria-label="Wi-Fi"><svg viewBox="0 0 24 24" class="wf-ic"><path class="w3" d="M2.5 9a14 14 0 0 1 19 0"/><path class="w2" d="M5.5 12.3a9.5 9.5 0 0 1 13 0"/><path class="w1" d="M8.6 15.5a5 5 0 0 1 6.8 0"/><circle class="w0" cx="12" cy="19" r="1.6"/><path class="wx" d="M4 4l16 16"/></svg></button>
           <a class="hm-ri" data-pk="nav" href="intent://#Intent;package=com.waze;end" style="background:linear-gradient(160deg,#4aa3ff,#1752e0)" aria-label="Navigation"><svg viewBox="0 0 28 28"><path d="M5 13.5l17-8-8 17-2.2-6.800z" fill="#fff" stroke="none"/></svg></a>
           <a class="hm-ri" data-pk="music" href="intent://#Intent;package=com.spotify.music;end" style="background:linear-gradient(160deg,#ff5fa8,#e0187a)" aria-label="Musique"><svg viewBox="0 0 28 28"><path d="M10 20V7l11-2v13"/><circle cx="8" cy="20" r="2.600" fill="#fff"/><circle cx="19" cy="18" r="2.600" fill="#fff"/></svg></a>
           <a class="hm-ri" data-pk="phone" href="intent://#Intent;package=com.google.android.dialer;end" style="background:linear-gradient(160deg,#6be26b,#1f9d3a)" aria-label="Téléphone"><svg viewBox="0 0 28 28"><path d="M7 5l4 1 1 4.500-2.200 1.600a12 12 0 0 0 5.500 5.500l1.600-2.200L22 16l1 4a2 2 0 0 1-2 2C11 22 5 15 5 7a2 2 0 0 1 2-2z" fill="#fff" stroke="none"/></svg></a>
@@ -1297,6 +1338,7 @@ body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
           <span class="hb-sp"></span>
           <span class="hb-chip" id="hb-cool-c"><svg viewBox="0 0 24 24"><path d="M12 3v11"/><circle cx="12" cy="17" r="3.5"/><path d="M12 6h3M12 9h3"/></svg><em id="hb-cool">–</em></span>
           <span class="hb-chip" id="hb-volt-c"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5M17 7V5M7 13h3M15.5 11.5v3M14 13h3"/></svg><em id="hb-volt">–</em></span>
+          <button type="button" class="hb-chip hb-wf wf-open" id="hb-wf" data-s="off"><svg viewBox="0 0 24 24" class="wf-ic"><path class="w3" d="M2.5 9a14 14 0 0 1 19 0"/><path class="w2" d="M5.5 12.3a9.5 9.5 0 0 1 13 0"/><path class="w1" d="M8.6 15.5a5 5 0 0 1 6.8 0"/><circle class="w0" cx="12" cy="19" r="1.6"/><path class="wx" d="M4 4l16 16"/></svg><em id="hb-wft">Wi-Fi</em></button>
           <span class="hb-chip hb-obd" id="hb-obd-c"><i></i><em id="hb-obd">–</em></span>
         </div>
         <div class="gl hb-spd">
@@ -1669,6 +1711,35 @@ body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
     <div class="mp-lgw" id="mp-lg"></div>
     <div class="mp-msg" id="mp-msg" hidden></div>
     <div class="mp-at" id="mp-at"></div>
+  </div>
+</div>
+<div class="qr-modal" id="wf-modal" hidden>
+  <div class="qr-p wf-p">
+    <div class="qr-h"><b>Wi-Fi de l’autoradio</b><button type="button" class="link" id="wf-close" aria-label="Fermer">✕</button></div>
+    <div class="wf-st" id="wf-st" data-s="off"><svg viewBox="0 0 24 24" class="wf-ic"><path class="w3" d="M2.5 9a14 14 0 0 1 19 0"/><path class="w2" d="M5.5 12.3a9.5 9.5 0 0 1 13 0"/><path class="w1" d="M8.6 15.5a5 5 0 0 1 6.8 0"/><circle class="w0" cx="12" cy="19" r="1.6"/><path class="wx" d="M4 4l16 16"/></svg><span><b id="wf-st-t">–</b><small id="wf-st-s"></small></span><button type="button" class="btn ghost" id="wf-tog">Activer</button></div>
+    <div class="wf-cols">
+      <div class="wf-col">
+        <h3>Mon partage de connexion</h3>
+        <p class="wf-hint">Enregistre une fois le partage de connexion de ton téléphone : l’autoradio s’y reconnectera tout seul ensuite.</p>
+        <label class="wf-l">Nom du réseau<input class="field wf-in" id="wf-hs" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ex. iPhone de Tristan"></label>
+        <label class="wf-l">Mot de passe<input class="field wf-in" id="wf-hp" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+        <div class="wf-b"><button type="button" class="btn" id="wf-hgo">Se connecter</button><button type="button" class="btn ghost" id="wf-hshow">Afficher</button></div>
+        <p class="wf-msg" id="wf-msg"></p>
+        <details class="wf-help"><summary>Aide : activer le partage sur l’iPhone</summary><ol>
+          <li>Sur l’iPhone : <b>Réglages → Partage de connexion</b>, active <b>Autoriser d’autres utilisateurs</b>.</li>
+          <li>Active aussi <b>Maximiser la compatibilité</b> : beaucoup d’autoradios ne voient pas le Wi-Fi 5 GHz.</li>
+          <li>Le nom du réseau est celui de l’iPhone (<b>Réglages → Général → Informations → Nom</b>). Le mot de passe est affiché dans Partage de connexion.</li>
+          <li>Garde l’écran Partage de connexion ouvert quelques secondes pendant que l’autoradio se connecte.</li>
+          <li>Sur Android : <b>Paramètres → Réseau → Point d’accès</b>, même principe.</li>
+        </ol></details>
+      </div>
+      <div class="wf-col">
+        <h3>Réseaux autour <button type="button" class="link" id="wf-scan">Actualiser</button></h3>
+        <div class="wf-list" id="wf-list"></div>
+        <div class="wf-pw" id="wf-pw" hidden><b id="wf-pw-n"></b><input class="field wf-in" id="wf-pw-i" type="password" placeholder="Mot de passe" autocomplete="off" autocapitalize="off"><div class="wf-b"><button type="button" class="btn" id="wf-pw-go">Connecter</button><button type="button" class="btn ghost" id="wf-pw-x">Annuler</button></div></div>
+        <button type="button" class="btn ghost wf-sys" id="wf-sys">Ouvrir les réglages Wi-Fi d’Android</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="qr-modal" id="qr-modal" hidden>
@@ -8845,7 +8916,7 @@ function offBlock(){
   d.innerHTML='<p class="set-sub"><b>Carte hors ligne</b><small>La même carte que dans l’appli (trajets et accueil), utilisable sans internet. Télécharge-la une fois avec internet (Wi-Fi ou partage de connexion) : la zone autour de toi en détail, et toute la France en vue large. Les endroits que tu regardes avec internet sont aussi gardés automatiquement.</small></p>'+
     '<div class="seg off-r">'+[[15,'15 km'],[30,'30 km'],[60,'60 km'],[100,'100 km']].map(function(o){return '<button type="button" data-v="'+o[0]+'">'+o[1]+'</button>'}).join('')+'</div>'+
     '<p class="off-est msg"></p><div class="off-bar" hidden><i></i></div><p class="off-st msg"></p>'+
-    '<div class="ri-b"><button type="button" class="btn off-go">Télécharger la carte</button> <button type="button" class="btn ghost off-stop" hidden>Arrêter</button> <button type="button" class="btn ghost off-clr">Effacer</button></div>';
+    '<div class="ri-b"><button type="button" class="btn off-go">Télécharger la carte</button> <button type="button" class="btn ghost off-stop" hidden>Arrêter</button> <button type="button" class="btn ghost off-clr">Effacer</button> <button type="button" class="btn ghost off-wf">Wi-Fi…</button></div>';
   var R=+settings.offR||30;
   function est(){
     $$('.off-r button',d).forEach(function(b){b.setAttribute('aria-pressed',+b.getAttribute('data-v')===R?'true':'false')});
@@ -8867,8 +8938,82 @@ function offBlock(){
   });
   $('.off-stop',d).addEventListener('click',function(){try{window.AndroidApp.mapDlStop()}catch(e){}setTimeout(poll,300)});
   $('.off-clr',d).addEventListener('click',function(){if(!confirm('Effacer la carte hors ligne gardée sur l’autoradio ?'))return;try{window.AndroidApp.mapClear()}catch(e){}setTimeout(poll,300)});
+  $('.off-wf',d).addEventListener('click',wfOpen);
   est();setTimeout(poll,50);
   return d;
+}
+/* ---------- 3.8 : Wi-Fi (indicateur + aide à la connexion) ---------- */
+var WF={st:{},t:0,pend:null};
+function wfNat(){return !!(window.AndroidApp&&window.AndroidApp.wifiState)}
+function wfRead(){
+  if(!wfNat()){WF.st={demo:true,on:true,wifi:true,net:navigator.onLine!==false,ssid:'Démo',lvl:3};return WF.st}
+  try{WF.st=JSON.parse(window.AndroidApp.wifiState())}catch(e){WF.st={}}return WF.st;
+}
+function wfLook(st){return !st.on?'off':st.wifi?'l'+(st.lvl==null?3:st.lvl):'none'}
+function wfInd(){
+  var now=Date.now();if(now-WF.t<4000)return;WF.t=now;
+  var st=wfRead(),k=wfLook(st),net=st.wifi?(st.net?'1':'0'):'';
+  ['hb-wf','hm-wf'].forEach(function(id){var e=document.getElementById(id);if(e){e.setAttribute('data-s',k);e.setAttribute('data-net',net)}});
+  setTx('hb-wft',!st.on?'Wi-Fi coupé':st.wifi?(st.ssid||'Wi-Fi')+(st.net?'':' · sans internet'):'Pas de Wi-Fi');
+  if(WF.pend&&st.wifi&&st.ssid===WF.pend){setTx('wf-msg','Connecté à '+st.ssid+(st.net?' ✓':' (pas encore d’internet…)'));WF.pend=null}
+  if(!$('#wf-modal').hidden)wfStatus(st);
+}
+function wfStatus(st){
+  var box=$('#wf-st');box.setAttribute('data-s',wfLook(st));box.setAttribute('data-net',st.wifi?(st.net?'1':'0'):'');
+  var bars=['très faible','faible','bon','excellent'];
+  setTx('wf-st-t',!st.on?'Wi-Fi désactivé':st.wifi?'Connecté à '+(st.ssid||'un réseau'):'Wi-Fi activé, pas connecté');
+  setTx('wf-st-s',!st.on?'Active-le pour te connecter au partage de connexion de ton téléphone.':st.wifi?('Signal '+bars[Math.max(0,Math.min(3,st.lvl||0))]+' · '+(st.net?'internet OK : mises à jour et carte disponibles':'pas d’accès à internet sur ce réseau')):(st.other?'Internet passe par un autre moyen (4G, câble).':'Choisis un réseau ou ton partage de connexion.'));
+  setTx('wf-tog',st.on?'Désactiver':'Activer');$('#wf-tog').hidden=!!st.demo;
+}
+function wfList(){
+  var L=[];if(wfNat()){try{L=JSON.parse(window.AndroidApp.wifiList())}catch(e){}}
+  else L=[{ssid:'Démo',lvl:3,sec:true,saved:true},{ssid:'iPhone de Tristan',lvl:2,sec:true,saved:false},{ssid:'Freebox-3A2F',lvl:1,sec:true,saved:false}];
+  L.sort(function(a,b){return (b.saved-a.saved)||(b.lvl-a.lvl)});
+  var box=$('#wf-list'),cur=WF.st.wifi?WF.st.ssid:'';box.innerHTML='';
+  if(!L.length){box.innerHTML='<div class="wf-e">'+(WF.st.on===false?'Active le Wi-Fi pour voir les réseaux.':'Aucun réseau trouvé pour le moment. Si tu utilises le partage de connexion de l’iPhone, ouvre l’écran Partage de connexion sur l’iPhone puis touche Actualiser.')+'</div>';return}
+  L.slice(0,25).forEach(function(n){
+    var b=document.createElement('button');b.type='button';b.setAttribute('data-s','l'+n.lvl);if(n.ssid===cur)b.setAttribute('data-cur','1');
+    b.innerHTML='<svg viewBox="0 0 24 24" class="wf-ic"><path class="w3" d="M2.5 9a14 14 0 0 1 19 0"/><path class="w2" d="M5.5 12.3a9.5 9.5 0 0 1 13 0"/><path class="w1" d="M8.6 15.5a5 5 0 0 1 6.8 0"/><circle class="w0" cx="12" cy="19" r="1.6"/></svg><span></span><small></small>';
+    $('span',b).textContent=n.ssid;$('small',b).textContent=n.ssid===cur?'connecté':n.saved?'enregistré':n.sec?'🔒':'ouvert';
+    b.addEventListener('click',function(){
+      if(n.ssid===cur)return;
+      if(n.saved||!n.sec){wfGo(n.ssid,'')}else{$('#wf-pw').hidden=false;setTx('wf-pw-n',n.ssid);$('#wf-pw-i').value='';$('#wf-pw-i').focus();WF.pw=n.ssid}
+    });
+    box.appendChild(b);
+  });
+}
+function wfGo(ssid,pwd){
+  setTx('wf-msg','');
+  if(!wfNat()){setTx('wf-msg','Dans l’appli de l’autoradio, la connexion se fait ici directement.');return}
+  var ok=false;try{ok=window.AndroidApp.wifiConnect(ssid,pwd||'')}catch(e){}
+  WF.pend=ok?ssid:null;WF.t=0;
+  setTx('wf-msg',ok?'Connexion à '+ssid+'…':'Impossible d’ajouter ce réseau ici. Utilise « Ouvrir les réglages Wi-Fi d’Android ».');
+  setTimeout(function(){if(WF.pend===ssid){setTx('wf-msg','Toujours pas connecté à '+ssid+'. Vérifie le mot de passe et que le partage de connexion est bien ouvert sur le téléphone.');WF.pend=null}},20000);
+}
+function wfOpen(){
+  $('#wf-modal').hidden=false;$('#wf-pw').hidden=true;setTx('wf-msg','');
+  $('#wf-hs').value=settings.wfHs||'';$('#wf-hp').value=settings.wfHp||'';
+  WF.t=0;wfInd();wfStatus(WF.st);
+  try{window.AndroidApp.wifiScan()}catch(e){}wfList();
+  clearInterval(WF.iv);WF.iv=setInterval(function(){if($('#wf-modal').hidden){clearInterval(WF.iv);return}WF.t=0;wfInd();wfList()},4000);
+}
+function wireWifi(){
+  $$('.wf-open').forEach(function(b){b.addEventListener('click',wfOpen)});
+  $('#wf-close').addEventListener('click',function(){$('#wf-modal').hidden=true});
+  $('#wf-modal').addEventListener('click',function(e){if(e.target===$('#wf-modal'))$('#wf-modal').hidden=true});
+  $('#wf-tog').addEventListener('click',function(){try{window.AndroidApp.wifiOn(!WF.st.on)}catch(e){}setTimeout(function(){WF.t=0;wfInd();try{window.AndroidApp.wifiScan()}catch(e){}wfList()},1500)});
+  $('#wf-scan').addEventListener('click',function(){try{window.AndroidApp.wifiScan()}catch(e){}setTimeout(wfList,2500);wfList()});
+  $('#wf-sys').addEventListener('click',function(){if(wfNat())try{window.AndroidApp.wifiSettings()}catch(e){}else setTx('wf-msg','Ouvre les réglages Wi-Fi depuis l’autoradio.')});
+  $('#wf-hshow').addEventListener('click',function(){var i=$('#wf-hp');i.type=i.type==='password'?'text':'password';setTx('wf-hshow',i.type==='password'?'Afficher':'Masquer')});
+  $('#wf-hgo').addEventListener('click',function(){
+    var n=$('#wf-hs').value.trim(),pw=$('#wf-hp').value;
+    if(!n){setTx('wf-msg','Écris le nom du réseau (le nom de ton téléphone).');return}
+    if(pw&&pw.length<8){setTx('wf-msg','Le mot de passe fait au moins 8 caractères.');return}
+    settings.wfHs=n;settings.wfHp=pw;saveSettings();wfGo(n,pw);
+  });
+  $('#wf-pw-go').addEventListener('click',function(){var pw=$('#wf-pw-i').value;if(pw.length<8){setTx('wf-msg','Le mot de passe fait au moins 8 caractères.');return}$('#wf-pw').hidden=true;wfGo(WF.pw,pw)});
+  $('#wf-pw-x').addEventListener('click',function(){$('#wf-pw').hidden=true});
+  setInterval(function(){if(!ECO.bg)wfInd()},5000);wfInd();
 }
 var LAYS=[
   {k:'classic',n:'Classique',d:'La voiture en grand',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="52" height="34" rx="4" fill="#3a4160"/><rect x="13" y="39" width="52" height="9" rx="3" fill="#2a2f40"/><rect x="68" y="2" width="30" height="20" rx="4" fill="#2a2f40"/><rect x="68" y="25" width="30" height="23" rx="4" fill="#2a2f40"/>'},
@@ -9241,7 +9386,7 @@ function wire(){
   wireCarplay();
   wireIsland();
   wireTrips();
-  wirePhone();
+  wirePhone();try{wireWifi()}catch(e){}
   wireFuel();
   wirePhoneLink();
   wireSplit();

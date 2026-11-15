@@ -52,6 +52,8 @@ public class MainActivity extends Activity {
     private PhoneLink phone;
     private ValueCallback<Uri[]> fileCb;
 
+    WifiLink wifi;
+
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -71,6 +73,7 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new AppApi(), "AndroidApp");
         phone = new PhoneLink(this, web);
         phone.start();
+        wifi = new WifiLink(this);
         geo = new GeoLink(this);
         geo.start();
         if (!phone.hasPerm()) phone.askPerm();
@@ -539,6 +542,20 @@ public class MainActivity extends Activity {
                 return "{}";
             }
         }
+
+        /* Wi-Fi */
+        @JavascriptInterface
+        public String wifiState() { return wifi.state(); }
+        @JavascriptInterface
+        public void wifiScan() { wifi.scan(); }
+        @JavascriptInterface
+        public String wifiList() { return wifi.list(); }
+        @JavascriptInterface
+        public boolean wifiOn(boolean on) { return wifi.enable(on); }
+        @JavascriptInterface
+        public boolean wifiConnect(String ssid, String pwd) { return wifi.connect(ssid, pwd); }
+        @JavascriptInterface
+        public void wifiSettings() { wifi.openSettings(); }
 
         /* carte hors ligne */
         @JavascriptInterface
