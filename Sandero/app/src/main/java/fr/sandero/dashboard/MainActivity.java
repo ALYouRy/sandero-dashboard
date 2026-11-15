@@ -521,13 +521,39 @@ public class MainActivity extends Activity {
                     String a = md.getString(MediaMetadata.METADATA_KEY_ARTIST);
                     if (t != null) o.put("t", t);
                     if (a != null) o.put("a", a);
+                    Bitmap art = md.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+                    if (art == null) art = md.getBitmap(MediaMetadata.METADATA_KEY_ART);
+                    if (art != null) o.put("k", art.getWidth() + "x" + art.getHeight() + ":" + art.getGenerationId());
                 }
+                o.put("src", c.getPackageName());
                 o.put("p", ps != null && ps.getState() == PlaybackState.STATE_PLAYING);
                 return o.toString();
             } catch (SecurityException e) {
                 return "{\"perm\":true}";
             } catch (Exception e) {
                 return "{}";
+            }
+        }
+
+        /* pochette de l'album en cours (JPEG 240 px, base64), vide s'il n'y en a pas */
+        @JavascriptInterface
+        public String nowArt() {
+            try {
+                MediaSessionManager msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
+                List<MediaController> cs = msm.getActiveSessions(new ComponentName(MainActivity.this, MediaListener.class));
+                if (cs == null || cs.isEmpty()) return "";
+                MediaMetadata md = cs.get(0).getMetadata();
+                if (md == null) return "";
+                Bitmap art = md.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART);
+                if (art == null) art = md.getBitmap(MediaMetadata.METADATA_KEY_ART);
+                if (art == null) return "";
+                int w = art.getWidth(), h = art.getHeight(), m = Math.max(w, h);
+                if (m > 240) art = Bitmap.createScaledBitmap(art, Math.max(1, w * 240 / m), Math.max(1, h * 240 / m), true);
+                ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                art.compress(Bitmap.CompressFormat.JPEG, 85, bo);
+                return Base64.encodeToString(bo.toByteArray(), Base64.NO_WRAP);
+            } catch (Exception e) {
+                return "";
             }
         }
 

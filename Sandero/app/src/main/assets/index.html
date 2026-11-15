@@ -1036,6 +1036,116 @@ body.eco-bg *{animation-play-state:paused!important}
 .bt-h path{fill:none;stroke:var(--accent);stroke-width:1.6;vector-effect:non-scaling-stroke}
 body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 </style>
+<style>
+/* ===== 3.6 : dispositions de l'accueil « Tableau » et « Cockpit » ===== */
+.hb-head,.hb-spd,.hb-map,.hb-drv,.hb-ses{display:none}
+#mu-art,#mu-artb{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+#mu-artb{object-fit:cover;filter:blur(18px) brightness(.55);transform:scale(1.25)}
+body[data-lay="board"] #mu-art,body[data-lay="cockpit"] #mu-art{object-fit:contain}
+#mu-art[hidden],#mu-artb[hidden]{display:none}
+.hm-mi{position:relative;overflow:hidden}
+body[data-lay="board"] .hm,body[data-lay="cockpit"] .hm{gap:12px;padding:12px 14px 12px 12px}
+body[data-lay="board"] .hm{grid-template-columns:84px minmax(0,1fr) minmax(0,.86fr) minmax(0,1.6fr);grid-template-rows:auto minmax(0,.82fr) minmax(0,1.2fr) minmax(0,.62fr) auto;
+  grid-template-areas:"rail head head head" "rail clock spd map" "rail music veh map" "rail music drv map" "rail ses bar bar"}
+body[data-lay="cockpit"] .hm{grid-template-columns:84px minmax(0,1.6fr) minmax(0,.86fr) minmax(0,1fr);grid-template-rows:auto minmax(0,.82fr) minmax(0,1.2fr) minmax(0,.62fr) auto;
+  grid-template-areas:"rail head head head" "rail map spd clock" "rail map veh music" "rail map drv music" "rail bar bar ses"}
+body[data-lay="board"] .hm-mid,body[data-lay="board"] .hm-rcol,body[data-lay="board"] .hm-rb,
+body[data-lay="cockpit"] .hm-mid,body[data-lay="cockpit"] .hm-rcol,body[data-lay="cockpit"] .hm-rb{display:contents}
+body[data-lay="board"] .hm-rail,body[data-lay="cockpit"] .hm-rail{grid-area:rail}
+body[data-lay="board"] .hm-sm,body[data-lay="cockpit"] .hm-sm,
+body[data-lay="board"] .hm-mini,body[data-lay="cockpit"] .hm-mini,
+body[data-lay="board"] .hm-veh,body[data-lay="cockpit"] .hm-veh,
+body[data-lay="board"] .hm-rt0,body[data-lay="cockpit"] .hm-rt0{display:none}
+body[data-lay="board"] .hb-head,body[data-lay="cockpit"] .hb-head{display:flex}
+body[data-lay="board"] .hb-spd,body[data-lay="cockpit"] .hb-spd,
+body[data-lay="board"] .hb-map,body[data-lay="cockpit"] .hb-map,
+body[data-lay="board"] .hb-drv,body[data-lay="cockpit"] .hb-drv,
+body[data-lay="board"] .hb-ses,body[data-lay="cockpit"] .hb-ses{display:flex}
+/* en-tête */
+.hb-head{grid-area:head;align-items:center;gap:10px;padding:0 4px 0 8px;min-width:0}
+.hb-head b{font-size:15px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--fg)}
+.hb-tag{font-size:11px;font-weight:800;letter-spacing:.08em;padding:3px 8px;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:var(--fg-2)}
+.hb-tag:empty{display:none}
+.hb-sp{flex:1}
+.hb-chip{display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-size:13px;font-weight:700;white-space:nowrap}
+.hb-chip svg{width:16px;height:16px;fill:none;stroke:var(--fg-2);stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.hb-chip em{font-style:normal}
+.hb-chip.st-w{color:#ffb340}.hb-chip.st-b{color:#ff5a5a;border-color:rgba(255,90,90,.45)}
+.hb-obd i{width:8px;height:8px;border-radius:50%;background:#32d74b;box-shadow:0 0 8px #32d74b}
+.hb-obd[data-w="1"] i{background:#ff9f0a;box-shadow:0 0 8px #ff9f0a}
+.hb-obd em{max-width:26ch;overflow:hidden;text-overflow:ellipsis}
+/* horloge */
+body[data-lay="board"] .hm-clock,body[data-lay="cockpit"] .hm-clock{grid-area:clock;align-items:center;justify-content:center;text-align:center;padding:10px}
+body[data-lay="board"] .hm-big,body[data-lay="cockpit"] .hm-big{order:-1;font-size:clamp(44px,7.4vh,70px);margin:0;line-height:1;letter-spacing:-.04em;font-weight:800}
+body[data-lay="board"] .hm-clock>small,body[data-lay="cockpit"] .hm-clock>small{margin-top:6px}
+/* vitesse */
+.hb-spd{grid-area:spd;flex-direction:column;align-items:center;justify-content:center;padding:8px 10px;min-width:0}
+.hb-v{font-size:clamp(46px,8vh,76px);font-weight:800;line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.hb-spd>small{font-size:13px;color:var(--fg-2);font-weight:700;margin-top:2px}
+.hb-sub{display:flex;gap:18px;margin-top:8px}
+.hb-sub span{display:flex;flex-direction:column;align-items:center}
+.hb-sub small{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-2);font-weight:700}
+.hb-sub b{font-size:15px;font-weight:700}
+/* véhicule (voiture 3D) */
+body[data-lay="board"] .hm-card,body[data-lay="cockpit"] .hm-card{grid-area:veh;min-height:0}
+body[data-lay="board"] .hm-title,body[data-lay="cockpit"] .hm-title{left:0;right:0;top:12px;text-align:center;align-items:center}
+body[data-lay="board"] .hm-card .isl,body[data-lay="cockpit"] .hm-card .isl{top:auto;bottom:10px}
+body[data-lay="board"] .hm-card .isl[data-m="compact"],body[data-lay="cockpit"] .hm-card .isl[data-m="compact"]{display:none}
+body[data-lay="board"] .hm-title span,body[data-lay="cockpit"] .hm-title span{display:none}
+.hb-dt small{white-space:nowrap;letter-spacing:.12em}
+body[data-lay="board"] .hm-title:before,body[data-lay="cockpit"] .hm-title:before{content:"Véhicule actuel";display:block;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg-2);font-weight:700;margin-bottom:3px}
+body[data-lay="board"] .hm-title b,body[data-lay="cockpit"] .hm-title b{font-size:22px}
+body[data-lay="board"] .hm-title span,body[data-lay="cockpit"] .hm-title span{justify-content:center;font-size:12.5px}
+body[data-lay="board"] .hm-title .hm-btc,body[data-lay="cockpit"] .hm-title .hm-btc{display:none}
+/* musique : grande pochette */
+body[data-lay="board"] .hm-music,body[data-lay="cockpit"] .hm-music{grid-area:music;flex-direction:column;align-items:stretch;justify-content:flex-start;padding:12px;display:grid;grid-template-columns:1fr auto auto auto 1fr;grid-template-rows:minmax(0,1fr) auto auto;gap:8px 12px}
+body[data-lay="board"] .hm-mi,body[data-lay="cockpit"] .hm-mi{grid-column:1/-1;width:auto;height:auto;min-height:0;border-radius:18px}
+body[data-lay="board"] .hm-mi svg,body[data-lay="cockpit"] .hm-mi svg{width:30%;height:30%;max-width:64px;max-height:64px}
+body[data-lay="board"] .hm-mt,body[data-lay="cockpit"] .hm-mt{grid-column:1/-1;margin:0;text-align:center}
+body[data-lay="board"] .hm-mt b,body[data-lay="cockpit"] .hm-mt b{font-size:16px}
+body[data-lay="board"] .hm-mt small,body[data-lay="cockpit"] .hm-mt small{font-size:12px}
+body[data-lay="board"] .mu-link,body[data-lay="cockpit"] .mu-link{margin:4px auto 0;text-align:center}
+body[data-lay="board"] .hm-music>.hm-pb,body[data-lay="board"] .hm-music>.hm-play,
+body[data-lay="cockpit"] .hm-music>.hm-pb,body[data-lay="cockpit"] .hm-music>.hm-play{grid-row:3;margin:0}
+body[data-lay="board"] #mu-prev,body[data-lay="cockpit"] #mu-prev{grid-column:2;align-self:center}
+body[data-lay="board"] .hm-play,body[data-lay="cockpit"] .hm-play{grid-column:3;width:50px;height:50px}
+body[data-lay="board"] #mu-next,body[data-lay="cockpit"] #mu-next{grid-column:4;align-self:center}
+/* carte */
+.hb-map{grid-area:map;position:relative;overflow:hidden;padding:0;text-decoration:none;color:var(--fg);min-height:0;border-radius:26px;background:radial-gradient(120% 90% at 70% 20%,rgba(var(--accent-rgb),.10),transparent 60%),#0b0d16}
+.hb-map canvas{position:absolute;top:0;left:0;width:100%;height:100%}
+.hb-mo{position:absolute;left:12px;right:12px;bottom:12px;padding:11px 15px;border-radius:18px;background:rgba(255,255,255,.92);color:#101218;display:flex;flex-direction:column}
+.hb-mo b{font-size:18px;font-weight:800;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-mo small{font-size:12px;color:#5b6070;font-weight:600}
+.hb-mlab{position:absolute;left:14px;top:12px;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:800;color:var(--fg-2);background:rgba(0,0,0,.35);padding:4px 8px;border-radius:7px}
+/* conducteur */
+.hb-drv{grid-area:drv;align-items:center;gap:12px;padding:10px 12px;text-align:left;min-width:0;background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.03))}
+.hb-av{flex:0 0 auto;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;background:linear-gradient(145deg,var(--accent),rgba(var(--accent-rgb),.35));box-shadow:0 4px 14px rgba(var(--accent-rgb),.3)}
+.hb-dt{flex:1;min-width:0;display:flex;flex-direction:column}
+.hb-dt small{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-2);font-weight:700}
+.hb-dt b{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-dt em{font-style:normal;font-size:12px;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-chev{flex:0 0 auto;width:18px;height:18px;fill:none;stroke:var(--fg-2);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* session */
+.hb-ses{grid-area:ses;flex-direction:column;justify-content:center;gap:6px;padding:10px 12px;min-width:0}
+.hb-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--fg-2);font-weight:600}
+.hb-row span{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.hb-row b{color:var(--fg);font-size:16px;font-weight:800;white-space:nowrap}
+.hb-ic{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.hb-ic2{background:#ffb340;box-shadow:0 0 8px #ffb340}
+.hb-pills{display:flex;gap:6px;margin-top:2px}
+.hb-pills button{flex:1;min-width:0;padding:6px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:var(--fg);font:inherit;font-size:11.5px;font-weight:700}
+.hb-pills button:first-child{background:rgba(var(--accent-rgb),.22);border-color:rgba(var(--accent-rgb),.45)}
+/* raccourcis du bas */
+body[data-lay="board"] .hm-bt,body[data-lay="cockpit"] .hm-bt{grid-area:bar;gap:10px}
+body[data-lay="board"] .hm-b,body[data-lay="cockpit"] .hm-b{min-height:0;padding:10px 12px}
+body[data-lay="board"] .hm-swipe,body[data-lay="cockpit"] .hm-swipe{right:2px}
+/* choix de la disposition (Réglages) */
+.set-lay{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:10px 0 6px}
+.set-lay button{display:flex;flex-direction:column;gap:8px;text-align:left;padding:10px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg)}
+.set-lay button[aria-pressed="true"]{border-color:rgba(var(--accent-rgb),.8);box-shadow:0 0 0 1px rgba(var(--accent-rgb),.5),0 0 18px rgba(var(--accent-rgb),.25)}
+.set-lay svg{width:100%;height:auto;display:block;border-radius:9px;background:#0b0d16}
+.set-lay b{font-size:15px}.set-lay small{display:block;font-size:12px;color:var(--fg-3);margin-top:1px}
+</style>
 </head><body>
 
 <div id="drawer" hidden>
@@ -1152,7 +1262,7 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
         </div>
         <div class="hm-rcol">
           <div class="gl hm-music">
-            <a class="hm-mi" data-pk="music" href="intent://#Intent;package=com.spotify.music;end" aria-label="Ouvrir la musique"><svg viewBox="0 0 28 28"><path d="M10 20V7l11-2v13"/><circle cx="8" cy="20" r="2.600" fill="#fff"/><circle cx="19" cy="18" r="2.600" fill="#fff"/></svg></a>
+            <a class="hm-mi" data-pk="music" href="intent://#Intent;package=com.spotify.music;end" aria-label="Ouvrir la musique"><svg viewBox="0 0 28 28"><path d="M10 20V7l11-2v13"/><circle cx="8" cy="20" r="2.600" fill="#fff"/><circle cx="19" cy="18" r="2.600" fill="#fff"/></svg><img id="mu-artb" alt="" hidden><img id="mu-art" alt="" hidden></a>
             <div class="hm-mt"><b id="mu-t">Musique</b><small id="mu-s">Touche pour ouvrir ton lecteur</small><button type="button" class="mu-link" id="mu-phone">Connecter mon téléphone</button></div>
             <button type="button" class="hm-pb" id="mu-prev" hidden aria-label="Précédent"><svg viewBox="0 0 28 28"><path d="M20 6v16l-11-8zM7 6v16" fill="#fff" stroke="#fff" stroke-width="2.200" stroke-linejoin="round"/></svg></button>
             <a class="hm-play" id="mu-play" data-pk="music" href="intent://#Intent;package=com.spotify.music;end" aria-label="Lecture"><svg viewBox="0 0 28 28" id="mu-ico"><path d="M9 6l13 8-13 8z" fill="#fff" stroke="none"/></svg></a>
@@ -1176,6 +1286,33 @@ body.no-blur *{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
               <button type="button" class="gl" data-go="diag" data-ic="diag"><span>Diagnostic</span></button>
             </div>
           </div>
+        </div>
+        <!-- 3.6 : cartes des dispositions « Tableau » et « Cockpit » (cachées en disposition classique) -->
+        <div class="hb-head">
+          <b id="hb-name">LA MATHIAS</b><span class="hb-tag" id="hb-plate"></span>
+          <span class="hb-sp"></span>
+          <span class="hb-chip" id="hb-cool-c"><svg viewBox="0 0 24 24"><path d="M12 3v11"/><circle cx="12" cy="17" r="3.5"/><path d="M12 6h3M12 9h3"/></svg><em id="hb-cool">–</em></span>
+          <span class="hb-chip" id="hb-volt-c"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M7 7V5M17 7V5M7 13h3M15.5 11.5v3M14 13h3"/></svg><em id="hb-volt">–</em></span>
+          <span class="hb-chip hb-obd" id="hb-obd-c"><i></i><em id="hb-obd">–</em></span>
+        </div>
+        <div class="gl hb-spd">
+          <div class="hb-v" id="hb-v">0</div><small>km/h</small>
+          <div class="hb-sub"><span><small>Rapport</small><b id="hb-g">–</b></span><span><small>Régime</small><b id="hb-r">–</b></span></div>
+        </div>
+        <a class="gl hb-map" data-pk="nav" href="intent://#Intent;package=com.waze;end" aria-label="Ouvrir la navigation">
+          <canvas id="hb-cv"></canvas>
+          <div class="hb-mo"><b id="hb-mt">–</b><small id="hb-ms">Touche pour ouvrir la navigation</small></div>
+          <span class="hb-mlab" id="hb-ml">Trajet en cours</span>
+        </a>
+        <button type="button" class="gl hb-drv" data-go="trips">
+          <span class="hb-av" id="hb-av">?</span>
+          <span class="hb-dt"><small>Ton conducteur</small><b id="hb-dn">–</b><em id="hb-ds">–</em></span>
+          <svg viewBox="0 0 24 24" class="hb-chev"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+        <div class="gl hb-ses">
+          <div class="hb-row"><span><i class="hb-ic"></i>Trajet en cours</span><b id="hb-s1">–</b></div>
+          <div class="hb-row"><span><i class="hb-ic hb-ic2"></i>Aujourd’hui</span><b id="hb-s2">–</b></div>
+          <div class="hb-pills"><button type="button" data-go="drive">Conduite</button><button type="button" data-go="cons">Conso</button><button type="button" data-go="diag">Diagnostic</button></div>
         </div>
       </div>
     </section>
@@ -3855,7 +3992,7 @@ var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:fal
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
   carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
-  demoOff:true,updAuto:true,tripMerge:5,consGoal:0,ghost:true,harmony:'neon',iphExtra:true,iphInfo:'auto',iphAuto:true,iphZip:true,iphPrompt:'auto',iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
+  demoOff:true,updAuto:true,tripMerge:5,consGoal:0,ghost:true,harmony:'neon',iphExtra:true,iphInfo:'auto',homeLay:'board',iphAuto:true,iphZip:true,iphPrompt:'auto',iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
 if((settings.uiv||0)<2){
@@ -6766,10 +6903,12 @@ function pollMedia(){
     try{
       var o=JSON.parse(window.AndroidApp.nowPlaying());
       media.perm=!!o.perm;media.t=o.t||'';media.a=o.a||'';media.p=!!o.p;media.none=!o.t&&!o.a;
+      var ak=(o.k||'')+'|'+media.t;if(ak!==media.ak){media.ak=ak;media.art='';if(o.k&&window.AndroidApp.nowArt){try{var b=window.AndroidApp.nowArt();if(b)media.art='data:image/jpeg;base64,'+b}catch(e){}}artSet(media.art)}
     }catch(e){}
   }
   updateMusic();
 }
+function artSet(u){var a=$('#mu-art'),b=$('#mu-artb');if(!a)return;if(u){a.src=u;b.src=u}a.hidden=!u;b.hidden=!u;$('.hm-mi').classList.toggle('has-art',!!u)}
 function updateMusic(){
   var nat=nativeMedia();
   var T=$('#mu-t'),S=$('#mu-s');if(!T)return;
@@ -8130,6 +8269,7 @@ var SCHEMA=[
  {col:'A',t:'Style et disposition',items:[
   {type:'themes'},
   {type:'harms'},
+  {type:'lays'},
   {k:'fontStyle',l:'Police',type:'seg',o:[['system','Standard'],['cond','Condensée'],['mono','Technique'],['serif','Élégante']]},
   {k:'numSize',l:'Taille des chiffres',h:'Plus gros = plus lisible d’un coup d’œil en roulant.',type:'seg',o:[['m','Normale'],['l','Grande'],['xl','Très grande']]},
   {k:'density',l:'Espacement',type:'seg',o:[['compact','Compact'],['normal','Normal'],['airy','Aéré']]},
@@ -8392,6 +8532,7 @@ function buildSettings(){
       if(it.type==='presets')card.appendChild(presetsBlock());
       else if(it.type==='themes')card.appendChild(themeBlock());
       else if(it.type==='harms'){var hh=document.createElement('p');hh.className='set-sub';hh.innerHTML='<b>Harmonie de couleurs</b><small>Pour le thème Néon : fond, lueurs, couleur d’accent, LED du plateau et carte assortis.</small>';card.appendChild(hh);card.appendChild(harmBlock())}
+      else if(it.type==='lays'){var lh=document.createElement('p');lh.className='set-sub';lh.innerHTML='<b>Disposition de l’accueil</b><small>Classique : la voiture en grand. Tableau et Cockpit : horloge, vitesse, musique avec pochette, carte du trajet et conducteur.</small>';card.appendChild(lh);card.appendChild(layBlock())}
       else if(it.type==='glasspre')card.appendChild(glassBlock());
       else if(it.type==='devinfo'){var di=document.createElement('p');di.className='msg';di.id='dev-info';di.style.padding='0 0 10px';di.textContent='Autoradio : '+devText();card.appendChild(di)}
       else if(it.type==='upd'){var ub=document.createElement('div');ub.id='upd-box';card.appendChild(ub);setTimeout(updUI,0)}
@@ -8424,6 +8565,7 @@ function refreshSettingsUI(){
 function hex2rgb(h){var m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return null;var n=parseInt(m[1],16);return [(n>>16)&255,(n>>8)&255,n&255]}
 function applyAll(){
   var r=document.documentElement,b=document.body;
+  var lay=settings.homeLay||'classic';if(b.getAttribute('data-lay')!==lay){b.setAttribute('data-lay',lay);HB.dirty=true;setTimeout(function(){try{window.dispatchEvent(new Event('resize'))}catch(e){}},60)}
   applyTheme();
   r.style.setProperty('--accent',settings.accent);
   r.style.setProperty('--accent-rgb',(hex2rgb(settings.accent)||[10,132,255]).join(','));
@@ -8582,6 +8724,99 @@ function nextService(){
 }
 function hmState(id,s){var p=$('#'+id).parentNode;p.classList.toggle('st-w',s==='w');p.classList.toggle('st-b',s==='b')}
 var LMODE=['Éteints','Veilleuses','Croisement','Pleins phares'];
+/* ---------- 3.6 : accueil « Tableau » / « Cockpit » ---------- */
+var HB={dirty:true,t:0,key:'',w:0,h:0,today:null};
+function hbToday(){
+  var d=new Date(),k=d.toDateString();
+  if(HB.today&&HB.today.k===k&&HB.today.n===trips.length&&Date.now()-HB.today.t<60000)return HB.today;
+  var t0=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime(),km=0,n=0,sc=0;
+  trips.forEach(function(r){if(r.t0>=t0&&(showDemoTrips||!r.demo)){km+=r.dist;n++;sc+=tripScore(r)}});
+  HB.today={k:k,n:trips.length,t:Date.now(),km:km,cnt:n,score:n?Math.round(sc/n):null};return HB.today;
+}
+function hbUpdate(hs){
+  setTx('hb-name',(settings.carName||'La Mathias'));
+  setTx('hb-plate',settings.plateText||'');
+  setTx('hb-cool',data.coolant!=null?Math.round(data.coolant)+' °C':'– °C');
+  setTx('hb-volt',data.volt!=null?data.volt.toFixed(1).replace('.',',')+' V':'– V');
+  var cc=$('#hb-cool-c'),vc=$('#hb-volt-c');
+  cc.classList.toggle('st-w',data.coolant!=null&&data.coolant>settings.tempWarn-6&&data.coolant<=settings.tempWarn);cc.classList.toggle('st-b',data.coolant!=null&&data.coolant>settings.tempWarn);
+  vc.classList.toggle('st-w',data.volt!=null&&data.volt<settings.voltMin&&data.volt>=settings.voltMin-0.4);vc.classList.toggle('st-b',data.volt!=null&&data.volt<settings.voltMin-0.4);
+  setTx('hb-obd',hs[0]);$('#hb-obd-c').setAttribute('data-w',hs[1]);
+  var v=data.speed;setTx('hb-v',v!=null&&(mode==='live'||mode==='demo')?Math.round(v):0);
+  setTx('hb-g',gearTxt(estGear()));setTx('hb-r',data.rpm!=null&&(mode==='live'||mode==='demo')?fmtNum(Math.round(data.rpm/50)*50,0):'–');
+  var nm=(settings.userName||'').trim();setTx('hb-dn',nm||'Conducteur');setTx('hb-av',(nm||'C').charAt(0).toUpperCase());
+  var td=hbToday();
+  setTx('hb-ds',td.cnt?'Note du jour '+td.score+'/100 · '+td.cnt+' trajet'+(td.cnt>1?'s':''):'Aucun trajet aujourd’hui');
+  setTx('hb-s1',rec?fmtDur(rec.dur||0)+' · '+fmtN(rec.dist||0,1)+' km':'À l’arrêt');
+  setTx('hb-s2',fmtN(td.km+(rec?rec.dist||0:0),1)+' km');
+  var now=Date.now();if(HB.dirty||now-HB.t>2500){HB.t=now;HB.dirty=false;hbMap()}
+}
+function hbLastTrack(){
+  if(rec&&rec.trk&&rec.trk.length>1)return {P:rec.trk,live:true,r:rec};
+  var A=trips.filter(function(r){return showDemoTrips||!r.demo}).sort(function(a,b){return b.t0-a.t0});
+  for(var i=0;i<A.length&&i<6;i++){var P=trkGet(A[i].id);if(A[i].demo&&(!P||P.length<2))P=trkFake(A[i]);if(P&&P.length>1)return {P:P,live:false,r:A[i]}}
+  return null;
+}
+function hbMap(){
+  var cv=$('#hb-cv');if(!cv||!cv.offsetWidth)return;
+  var T=hbLastTrack(),dpr=Math.min(1.5,window.devicePixelRatio||1),W=cv.offsetWidth,H=cv.offsetHeight;
+  var key=(T?(T.r.id||T.r.t0)+':'+T.P.length:'none')+':'+W+'x'+H+':'+settings.accent;
+  if(T&&T.live){setTx('hb-ml','Trajet en cours');setTx('hb-mt','En route · '+fmtN(T.r.dist||0,1)+' km');setTx('hb-ms',fmtDur(T.r.dur||0)+' de conduite · touche pour la navigation')}
+  else if(T){setTx('hb-ml','Dernier trajet');setTx('hb-mt',fmtN(T.r.dist,1)+' km · '+fmtDur(T.r.dur));setTx('hb-ms','Garée '+hbAgo(T.r.t1||T.r.t0+T.r.dur*1000)+' · touche pour la navigation')}
+  else{setTx('hb-ml','Carte');setTx('hb-mt','Pas encore de tracé GPS');setTx('hb-ms','Touche pour ouvrir la navigation')}
+  if(key===HB.key)return;HB.key=key;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+  var acc=settings.accent||'#00e5ff';
+  /* quadrillage façon plan */
+  c.strokeStyle='rgba(255,255,255,.045)';c.lineWidth=1;
+  for(var x=((W/2)%38);x<W;x+=38){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke()}
+  for(var y=((H/2)%38);y<H;y+=38){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke()}
+  if(!T)return;
+  var P=T.P,la0=1e9,la1=-1e9,lo0=1e9,lo1=-1e9;
+  P.forEach(function(p){if(p[0]<la0)la0=p[0];if(p[0]>la1)la1=p[0];if(p[1]<lo0)lo0=p[1];if(p[1]>lo1)lo1=p[1]});
+  var kx=Math.cos((la0+la1)/2*Math.PI/180)*111320,ky=110540;
+  var w=Math.max((lo1-lo0)*kx,300),h=Math.max((la1-la0)*ky,300);
+  var padB=86,pad=26,sc=Math.min((W-pad*2)/w,(H-pad-padB)/h);
+  var cx=(lo0+lo1)/2,cy=(la0+la1)/2,ox=W/2,oy=pad+(H-pad-padB)/2;
+  function X(p){return ox+(p[1]-cx)*kx*sc}function Y(p){return oy-(p[0]-cy)*ky*sc}
+  /* rues fictives autour du trajet : quelques îlots pour donner l'impression d'un plan */
+  c.fillStyle='rgba(255,255,255,.035)';
+  var seed=Math.floor(Math.abs(cx*1e4+cy*1e4))%9973;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647}
+  for(var i=0;i<26;i++){var bx=rnd()*W,by=rnd()*H,bw=20+rnd()*50,bh=14+rnd()*36;c.beginPath();c.rect(bx,by,bw,bh);c.fill()}
+  function path(){c.beginPath();P.forEach(function(p,i){var x=X(p),y=Y(p);if(i)c.lineTo(x,y);else c.moveTo(x,y)})}
+  c.lineJoin='round';c.lineCap='round';
+  path();c.strokeStyle='rgba(0,0,0,.55)';c.lineWidth=9;c.stroke();
+  path();c.strokeStyle=acc;c.globalAlpha=.25;c.lineWidth=12;c.stroke();c.globalAlpha=1;
+  path();c.strokeStyle=acc;c.lineWidth=4.5;c.stroke();
+  /* départ */
+  var a=P[0];c.beginPath();c.arc(X(a),Y(a),5,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=2.5;c.strokeStyle=acc;c.stroke();
+  /* position (flèche dans le sens de la marche) */
+  var e=P[P.length-1],b=P[Math.max(0,P.length-4)],ang=Math.atan2(X(e)-X(b),-(Y(e)-Y(b)));
+  var ex=X(e),ey=Y(e);
+  var g=c.createRadialGradient(ex,ey,0,ex,ey,30);g.addColorStop(0,'rgba(90,169,255,.45)');g.addColorStop(1,'rgba(90,169,255,0)');c.fillStyle=g;c.beginPath();c.arc(ex,ey,30,0,7);c.fill();
+  c.beginPath();c.arc(ex,ey,14,0,7);c.fillStyle='#2f7bff';c.fill();c.lineWidth=3;c.strokeStyle='#fff';c.stroke();
+  c.save();c.translate(ex,ey);c.rotate(ang);c.beginPath();c.moveTo(0,-7);c.lineTo(5.5,5);c.lineTo(0,2.4);c.lineTo(-5.5,5);c.closePath();c.fillStyle='#fff';c.fill();c.restore();
+}
+function hbAgo(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<1)return 'à l’instant';if(m<60)return 'il y a '+m+' min';var h=Math.round(m/60);if(h<24)return 'il y a '+h+' h';var d=Math.round(h/24);return 'il y a '+d+' jour'+(d>1?'s':'')}
+var LAYS=[
+  {k:'classic',n:'Classique',d:'La voiture en grand',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="52" height="34" rx="4" fill="#3a4160"/><rect x="13" y="39" width="52" height="9" rx="3" fill="#2a2f40"/><rect x="68" y="2" width="30" height="20" rx="4" fill="#2a2f40"/><rect x="68" y="25" width="30" height="23" rx="4" fill="#2a2f40"/>'},
+  {k:'board',n:'Tableau',d:'Horloge, musique, carte',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="22" height="11" rx="3" fill="#2a2f40"/><rect x="13" y="15" width="22" height="22" rx="3" fill="#3a4160"/><rect x="13" y="39" width="22" height="9" rx="3" fill="#2a2f40"/><rect x="38" y="2" width="20" height="11" rx="3" fill="#2a2f40"/><rect x="38" y="15" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="38" y="30" width="20" height="7" rx="3" fill="#2a2f40"/><rect x="61" y="2" width="37" height="35" rx="4" fill="ACC"/><rect x="38" y="39" width="60" height="9" rx="3" fill="#2a2f40"/>'},
+  {k:'cockpit',n:'Cockpit',d:'La carte à gauche',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="37" height="35" rx="4" fill="ACC"/><rect x="53" y="2" width="20" height="11" rx="3" fill="#2a2f40"/><rect x="53" y="15" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="53" y="30" width="20" height="7" rx="3" fill="#2a2f40"/><rect x="76" y="2" width="22" height="11" rx="3" fill="#2a2f40"/><rect x="76" y="15" width="22" height="22" rx="3" fill="#3a4160"/><rect x="13" y="39" width="60" height="9" rx="3" fill="#2a2f40"/><rect x="76" y="39" width="22" height="9" rx="3" fill="#2a2f40"/>'}
+];
+function layBlock(){
+  var d=document.createElement('div');d.className='set-lay';
+  LAYS.forEach(function(L){
+    var b=document.createElement('button');b.type='button';b.setAttribute('data-lay',L.k);
+    b.innerHTML='<svg viewBox="0 0 100 50">'+L.sv.replace(/ACC/g,'rgba('+(hex2rgb(settings.accent)||[0,229,255]).join(',')+',.55)')+'</svg><span><b></b><small></small></span>';
+    $('b',b).textContent=L.n;$('small',b).textContent=L.d;
+    b.setAttribute('aria-pressed',(settings.homeLay||'classic')===L.k?'true':'false');
+    b.addEventListener('click',function(){settings.homeLay=L.k;saveSettings();applyAll();
+      Array.prototype.forEach.call(d.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false')})});
+    d.appendChild(b);
+  });
+  return d;
+}
 function updateHome(){
   var d=new Date(),hm=fmtHM(d);
   setTx('hm-time2',hm);setTx('hm-time3',hm);
@@ -8602,6 +8837,7 @@ function updateHome(){
   hmState('hm-volt',data.volt!=null&&data.volt<settings.voltMin-0.4?'b':data.volt!=null&&data.volt<settings.voltMin?'w':'');
   var hfs=fuelState(hfi.pct);hmState('hm-fuel',hfs==='bad'?'b':hfs==='warn'?'w':'');
   setTx('hm-rpm',data.rpm!=null?Math.round(data.rpm/10)*10:'–');
+  if((settings.homeLay||'classic')!=='classic')hbUpdate(hs);
 }
 /* ---------- Éclairage (UI) ---------- */
 function syncLamps(){
@@ -8980,6 +9216,7 @@ function ecoApply(){
 window.onAppVisible=function(v){if(v)setTimeout(updAutoTick,4000);if(v&&(UPD.st==='perm'||UPD.st==='ready'))updUI();var b=!v;if(b===ECO.bg)return;ECO.bg=b;ecoApply();if(!b&&tsPending){var p=tsPending;tsPending=null;if(Date.now()-p.t<30*60000)setTimeout(function(){tsShow(p.r)},600)}};
 if(!String(settings.iphoneUrl||'').trim()){settings.iphoneUrl='https://alyoury.github.io/la-mathias/';saveSettings()}
 /* l'appli iPhone 2.23 lit les codes compressés : on les active */
+if(!settings.layMig){settings.layMig=1;settings.homeLay='board';saveSettings();try{applyAll()}catch(e){}}
 if(!settings.zipMig){settings.zipMig=1;settings.iphZip=true;saveSettings()}
 if(!settings.nameMig){settings.nameMig=1;if(!settings.carName||settings.carName==='Sandero'){settings.carName='La Mathias'}saveSettings();applyAll()}
 devSetup();
