@@ -3855,7 +3855,7 @@ var settings={fuel:'essence',disp:1.2,redline:6000,theme:'dark',paint:0,lite:fal
   paintCustom:null,gloss:100,doorSpeed:100,autoSpin:true,spinSpeed:100,ledColor:'blue',ledPower:100,lightPower:100,
   tank:50,baseCons:6.5,tempWarn:108,voltMin:12.2,fuelLow:15,
   carName:'La Mathias',carSub:'',showMusic:true,pkgNav:'com.waze',splitNav:true,navTarget:'carplay',pkgMusic:'com.spotify.music',pkgPhone:'com.google.android.dialer',
-  demoOff:true,updAuto:true,tripMerge:5,consGoal:0,ghost:true,harmony:'neon',iphExtra:true,iphAuto:true,iphZip:true,iphPrompt:'auto',iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
+  demoOff:true,updAuto:true,tripMerge:5,consGoal:0,ghost:true,harmony:'neon',iphExtra:true,iphInfo:'auto',iphAuto:true,iphZip:true,iphPrompt:'auto',iphSpeed:1800,gpsTrack:true,iphTracks:true,mapStyle:'neon',mapEngine:'auto',autoObd:true,autoBoot:true,tripSummary:true,autoBackup:true,welcome:false,userName:'Tristan',weatherCity:'Paris',camRest:'three',camSide:'left',camFocus:true,camDelay:1.5,camSpeed:100,camSway:true,glassBlur:22,glassAlpha:10,glassShine:100,glassEdge:100,glassSat:190,glassTint:'neutral',glassBlobs:true,pkgBtMusic:'',pkgCarplay:'',swipeCarplay:true,island:true,islandInfo:'speed',islandAuto:true,tripEnd:5,fuelPrice:1.85};
 try{var saved=JSON.parse(localStorage.getItem('sandero-settings-2')||'{}');Object.assign(settings,saved)}catch(e){}
 /* passage au design Studio (v2) : on remplace l'ancien Liquid Glass une seule fois */
 if((settings.uiv||0)<2){
@@ -7903,6 +7903,11 @@ function trkQr(P){
     if(src[4]==null)T.push('');else{T.push(Math.max(0,src[4]-pt).toString(36));pt=src[4];ht=true}});
   return [o.join('.'),(hc||hv||ht)?[hc?C.join('.'):'',hv?V.join('.'):'',ht?T.join('.'):''].join(','):''];
 }
+var IPHX='sandero-iph-x';
+function iphXSig(X){if(!X)return '';return X.split('_').filter(function(x){return /^[ctkdg]\./.test(x)||/^m\./.test(x)}).map(function(x){var a=x.split('.');return a[0]==='m'?[a[0],a[1],a[2],a[5],a[6],a[7]].join('.'):x}).join('_')}
+function iphTrkItems(L){var items=[];
+  L.slice(-20).forEach(function(r){var P=trkGet(r.id);if(r.demo&&(!P||P.length<2||!mpSmooth(P)))P=trkFake(r);if(P&&P.length>=2){var q=trkQr(P);items.push([b36(r.t0/1000)+'.'+q[0],q[1]])}});
+  return items}
 function iphTracks(L,budget){budget=budget||900;
   var items=[];
   L.slice(-20).forEach(function(r){var P=trkGet(r.id);if(r.demo&&(!P||P.length<2||!mpSmooth(P)))P=trkFake(r);if(P&&P.length>=2){var q=trkQr(P);items.push([b36(r.t0/1000)+'.'+q[0],q[1]])}});
@@ -7966,20 +7971,34 @@ function iphBuild(all){
     H=[bR?b36(bR.v*100):'',bU?b36(bU.v*100):'',dOk?(DTCS.codes||[]).slice(0,6).join('-'):'',dOk?b36(DTCS.t/1000):'',
        ns?qEnc(ns.n):'',ns?({ok:'0',warn:'1',bad:'2'}[ns.state]||''):'',ns?qEnc(nsTxt):'',pr.s.charAt(0),qEnc(pr.t),rev&&rev.km?b36(rev.km):''].join('.');
   }catch(e){H=''}
-  /* tracés GPS : codes en plus, après les codes habituels (8e champ, ignoré par les anciennes versions de l'appli iPhone) */
-  var Z=settings.iphZip===true,G=settings.iphTracks===false?[]:iphTracks(L,Z?1500:900);
+  /* 3.5 : codes remplis au maximum. Le 1er code porte trajets + pleins + favoris + santé, puis on y ajoute
+     les infos voiture (parts[9]) et autant de tracés GPS (parts[7]/[8]) que la place le permet ;
+     le reste part sur des codes suivants. L’appli iPhone lit parts[7], [8] et [9] sur n’importe quel code. */
+  var Z=settings.iphZip===true&&!!window.LZString,LIM=Z?(window.__LIM||1180):1000;
   var X=settings.iphExtra===false?'':iphExtra(L);
-  var per=Z?26:10,n=Math.max(1,Math.ceil(T.length/per)),pages=[],tot=n+(X?1:0)+G.length;
-  for(var i=0;i<n;i++){
-    pages.push('v1~'+snap+'~'+(i+1)+'-'+tot+'~'+T.slice(i*per,(i+1)*per).join('_')+'~'+(i===0?F.slice(-20).join('_'):'')+'~'+(i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):'')+'~'+(i===0?H:''));
-  }
-  /* 10e champ (parts[9]) : toutes les autres infos de la voiture, sur un code à part */
-  if(X)pages.push('v1~'+snap+'~'+(n+1)+'-'+tot+'~~~~~~~'+X);
-  var o=X?1:0;
-  G.forEach(function(g,k){pages.push('v1~'+snap+'~'+(n+o+k+1)+'-'+tot+'~~~~~'+g)});
-  /* codes compressés : « z1 » + LZString (l'appli iPhone décompresse puis lit le format v1 habituel) */
-  if(Z&&window.LZString)pages=pages.map(function(p){var z='z1'+LZString.compressToEncodedURIComponent(p);return z.length<p.length?z:p});
-  iph.nTrk=G.length;iph.pages=pages;iph.i=0;iph.all=all;iph.maxT=L.length?L[L.length-1].t0:0;iph.count=L.length;
+  var GI=settings.iphTracks===false?[]:iphTrkItems(L);
+  var per=Z?26:10,n=Math.max(1,Math.ceil(T.length/per)),P=[];
+  for(var i=0;i<n;i++)P.push(['v1',snap,'',T.slice(i*per,(i+1)*per).join('_'),i===0?F.slice(-20).join('_'):'',i===0?favs.slice(0,12).map(function(f){return b36(f.id)+'.'+qEnc(f.name)}).join('_'):'',i===0?H:'',[],[],'']);
+  function txt(q,tot,k){var g=q[7].join('_'),d=q[8].join('_'),f=q.slice(0,7);f[2]=k+'-'+tot;
+    var o=f.join('~');if(g||q[9])o+='~'+g+'~'+d;if(q[9])o+='~'+q[9];return o}
+  function enc(t){if(!Z)return t;var z='z1'+LZString.compressToEncodedURIComponent(t);return z.length<t.length?z:t}
+  function fits(q){return enc(txt(q,99,99)).length<=LIM}
+  function blank(){return ['v1',snap,'','','','','',[],[],'']}
+  var nTk=0;
+  GI.forEach(function(it){var put=false;
+    for(var i=0;i<P.length&&!put;i++){var q=P[i];q[7].push(it[0]);q[8].push(it[1]);if(fits(q))put=true;else{q[7].pop();q[8].pop()}}
+    if(!put){var q=blank();q[7].push(it[0]);q[8].push(it[1]);P.push(q)}nTk++});
+  /* infos voiture : l’appli iPhone garde les dernières reçues. En mode « auto », elles ne prennent un code à elles
+     que si quelque chose d’important a changé (voiture, entretien, pneus, freins, codes défaut, objectif) ou après 24 h ;
+     sinon elles partent seulement s’il reste de la place sur un code déjà prévu. */
+  var xs=iphXSig(X),xo=null;try{xo=JSON.parse(localStorage.getItem(IPHX)||'null')}catch(e){}
+  var xNeed=!!X&&(all||settings.iphInfo==='always'||!xo||xo.s!==xs||Date.now()-xo.t>864e5);
+  iph.xSig=null;
+  if(X){var put=false;for(i=0;i<P.length&&!put;i++){P[i][9]=X;if(fits(P[i]))put=true;else P[i][9]=''}
+    if(!put&&xNeed){var q=blank();q[9]=X;P.push(q);put=true}
+    if(put)iph.xSig=xs}
+  var tot=P.length,pages=P.map(function(q,k){return enc(txt(q,tot,k+1))});
+  iph.nTrk=nTk;iph.pages=pages;iph.i=0;iph.all=all;iph.maxT=L.length?L[L.length-1].t0:0;iph.count=L.length;
 }
 function iphDraw(){
   var cv=$('#qr-cv'),em=$('#qr-empty'),base=iphBase(),demoUrl=!base;
@@ -7995,7 +8014,7 @@ function iphDraw(){
   setTx('qr-n',(iph.i+1)+' / '+iph.pages.length);
   $('#qr-pg').hidden=iph.pages.length<2;
   $('#qr-prev').disabled=iph.i===0;$('#qr-next').disabled=iph.i>=iph.pages.length-1;
-  var info=iph.count?iph.count+' trajet'+(iph.count>1?'s':'')+(iph.all?' au total':' depuis le dernier envoi')+(iph.nTrk?', avec '+(iph.nTrk>1?iph.nTrk+' codes':'1 code')+' pour les tracés GPS':'')+(iph.pages.length>1?', en '+iph.pages.length+' codes'+(IPHAUTO.on?' qui défilent tout seuls : garde le scanner de l’appli iPhone devant l’écran':' à scanner l’un après l’autre'):'')+'.':'Aucun nouveau trajet : le code envoie seulement le réservoir et l’autonomie.';
+  var info=iph.count?iph.count+' trajet'+(iph.count>1?'s':'')+(iph.all?' au total':' depuis le dernier envoi')+(iph.nTrk?', avec '+(iph.nTrk>1?iph.nTrk+' tracés GPS':'le tracé GPS'):'')+(iph.pages.length>1?', en '+iph.pages.length+' codes'+(IPHAUTO.on?' qui défilent tout seuls : garde le scanner de l’appli iPhone devant l’écran':' à scanner l’un après l’autre'):'')+'.':'Aucun nouveau trajet : le code envoie seulement le réservoir et l’autonomie.';
   if(demoUrl)info+=' Adresse de l’appli iPhone non réglée (Réglages › Trajets) : ce code est un exemple.';
   setTx('qr-info',info);
   setTx('qr-all',iph.all?'Seulement les nouveaux':'Tout renvoyer');
@@ -8019,6 +8038,7 @@ function wireIphone(){
   $('#qr-all').addEventListener('click',function(){iphBuild(!iph.all);iphDraw();iphAutoSet(IPHAUTO.on)});
   $('#qr-done').addEventListener('click',function(){
     if(iph.maxT){try{localStorage.setItem(IPHSYNC,String(iph.maxT))}catch(e){}}
+    if(iph.xSig!=null){try{localStorage.setItem(IPHX,JSON.stringify({s:iph.xSig,t:Date.now()}))}catch(e){}}
     $('#qr-modal').hidden=true;
     try{if(currentView==='trips')tripsBuild();updateHome()}catch(e){}
     if(settings.islandAuto)islandEvent('Envoyé vers l’iPhone',iph.count?iph.count+' trajet'+(iph.count>1?'s':''):'Réservoir à jour','✓',3000,'good');
@@ -8225,7 +8245,8 @@ var SCHEMA=[
   {k:'iphPrompt',l:'À la fin d’un trajet',h:'« QR automatique » : après le résumé du trajet, les codes s’affichent et défilent s’il y a des trajets à envoyer (jamais en roulant, fermeture au bout de 3 min).',type:'seg',o:[['auto','QR automatique'],['btn','Bouton seulement'],['off','Rien']]},
   {k:'iphAuto',l:'Codes qui défilent tout seuls',h:'Le scanner de l’appli iPhone les récupère sans toucher à rien. Bouton ❚❚ pour arrêter.',type:'seg',o:boolOpts()},
   {k:'iphZip',l:'Codes compressés',h:'2 fois moins de codes. L’appli iPhone 2.23 ou plus récente sait les lire.',type:'seg',o:boolOpts()},
-  {k:'iphExtra',l:'Envoyer toutes les infos de la voiture',h:'Un code en plus : entretien complet, pneus, freins, kilométrage, voiture garée, codes défaut expliqués, historique de la batterie.',type:'seg',o:boolOpts()},
+  {k:'iphExtra',l:'Envoyer toutes les infos de la voiture',h:'Entretien complet, pneus, freins, kilométrage, voiture garée, codes défaut expliqués, historique de la batterie.',type:'seg',o:boolOpts()},
+  {k:'iphInfo',l:'Quand envoyer les infos voiture',h:'Auto : seulement si l’entretien, les pneus, les freins ou les codes défaut changent (ou une fois par jour), pour scanner moins de codes. Toujours : à chaque envoi.',type:'seg',o:[['auto','Auto'],['always','Toujours']]},
   {k:'iphTracks',l:'Envoyer les tracés à l’iPhone',h:'Ajoute des codes QR en plus pour les tracés (les 20 derniers trajets envoyés au maximum).',type:'seg',o:boolOpts()},
   {k:'fuelPrice',l:'Prix du carburant (€/L)',type:'num',min:0.5,max:4,step:0.01}
  ]},
