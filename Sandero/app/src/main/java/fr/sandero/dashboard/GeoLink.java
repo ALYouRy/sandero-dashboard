@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.GnssStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -26,6 +27,10 @@ class GeoLink implements LocationListener {
     /* toutes les positions GPS reçues (1 par seconde), gardées 3 minutes : l'appli les relit toutes, aucune n'est perdue */
     private final java.util.ArrayDeque<double[]> fixes = new java.util.ArrayDeque<>();
     private long fixSeq;
+    /* satellites (Android 7+) : combien sont vus, combien servent à la position, force moyenne du signal */
+    private volatile int satSeen = -1, satUsed = -1;
+    private volatile float cn0 = 0;
+    private Object gnssCb;
 
     GeoLink(Activity act) {
         this.act = act;
@@ -54,7 +59,25 @@ class GeoLink implements LocationListener {
         try {
             lm = (LocationManager) act.getSystemService(Context.LOCATION_SERVICE);
             if (lm == null) return;
-            try { lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, this, Looper.getMainLooper()); } catch (Exception ignored) {}
+            /* 0 ms : chaque position que la puce GPS calcule (1 par seconde en général, parfois plus) */
+            try { lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, this, Looper.getMainLooper()); } catch (Exception ignored) {}
+            if (Build.VERSION.SDK_INT >= 24) {
+                try {
+                    GnssStatus.Callback cb = new GnssStatus.Callback() {
+                        @Override public void onSatelliteStatusChanged(GnssStatus st) {
+                            int n = st.getSatelliteCount(), u = 0; float[] c = new float[n]; int k = 0;
+                            for (int i = 0; i < n; i++) if (st.usedInFix(i)) { u++; c[k++] = st.getCn0DbHz(i); }
+                            java.util.Arrays.sort(c, 0, k);
+                            float sum = 0; int m = Math.min(4, k);
+                            for (int i = 0; i < m; i++) sum += c[k - 1 - i];
+                            satSeen = n; satUsed = u; cn0 = m > 0 ? sum / m : 0;
+                        }
+                        @Override public void onStopped() { satUsed = 0; }
+                    };
+                    lm.registerGnssStatusCallback(cb);
+                    gnssCb = cb;
+                } catch (Exception ignored) {}
+            }
             for (String p : lm.getProviders(true)) {
                 Location l = lm.getLastKnownLocation(p);
                 keep(l);
@@ -70,6 +93,7 @@ class GeoLink implements LocationListener {
     void stop() {
         try {
             if (lm != null) lm.removeUpdates(this);
+            if (lm != null && gnssCb != null && Build.VERSION.SDK_INT >= 24) lm.unregisterGnssStatusCallback((GnssStatus.Callback) gnssCb);
         } catch (Exception ignored) {
         }
         on = false;
@@ -112,6 +136,7 @@ class GeoLink implements LocationListener {
         } else {
             s.append(",\"ok\":false");
         }
+        s.append(",\"sat\":").append(satSeen).append(",\"used\":").append(satUsed).append(",\"cn0\":").append(Math.round(cn0));
         return s.append('}').toString();
     }
 
@@ -123,13 +148,13 @@ class GeoLink implements LocationListener {
                 fixSeq++;
                 long el = Build.VERSION.SDK_INT >= 17 && l.getElapsedRealtimeNanos() > 0 ? l.getElapsedRealtimeNanos() / 1000000L : SystemClock.elapsedRealtime();
                 fixes.addLast(new double[]{fixSeq, l.getLatitude(), l.getLongitude(), l.hasAccuracy() ? l.getAccuracy() : 99,
-                        l.hasSpeed() ? l.getSpeed() : -1, el});
-                while (fixes.size() > 180) fixes.removeFirst();
+                        l.hasSpeed() ? l.getSpeed() : -1, el, l.hasBearing() ? l.getBearing() : -1});
+                while (fixes.size() > 600) fixes.removeFirst();
             }
         }
     }
 
-    /** positions GPS reçues après le numéro « after » : [[n,lat,lon,précision m,vitesse m/s,horloge ms],…] */
+    /** positions GPS reçues après le numéro « after » : [[n,lat,lon,précision m,vitesse m/s,horloge ms,cap °],…] */
     String batch(long after) {
         StringBuilder b = new StringBuilder("[");
         synchronized (fixes) {
@@ -137,7 +162,7 @@ class GeoLink implements LocationListener {
                 if ((long) f[0] <= after) continue;
                 if (b.length() > 1) b.append(',');
                 b.append('[').append((long) f[0]).append(',').append(f[1]).append(',').append(f[2]).append(',')
-                        .append(Math.round(f[3] * 10) / 10.0).append(',').append(Math.round(f[4] * 10) / 10.0).append(',').append((long) f[5]).append(']');
+                        .append(Math.round(f[3] * 10) / 10.0).append(',').append(Math.round(f[4] * 10) / 10.0).append(',').append((long) f[5]).append(',').append(Math.round(f[6] * 10) / 10.0).append(']');
             }
         }
         return b.append(']').toString();
@@ -153,7 +178,7 @@ class GeoLink implements LocationListener {
     public void onProviderEnabled(String p) {
         try {
             if (lm != null && hasPerm() && (LocationManager.GPS_PROVIDER.equals(p) || LocationManager.NETWORK_PROVIDER.equals(p))) {
-                lm.requestLocationUpdates(p, LocationManager.GPS_PROVIDER.equals(p) ? 1000L : 3000L, 0f, this, Looper.getMainLooper());
+                lm.requestLocationUpdates(p, LocationManager.GPS_PROVIDER.equals(p) ? 0L : 3000L, 0f, this, Looper.getMainLooper());
             }
         } catch (Exception ignored) {
         }
