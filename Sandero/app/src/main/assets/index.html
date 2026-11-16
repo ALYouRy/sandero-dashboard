@@ -1261,17 +1261,19 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
 .hm-rail .hm-ri{border:0!important;box-shadow:0 6px 16px rgba(0,0,0,.4)!important}
 .hm-rail .hm-ri svg,.hm-rail .hm-ri svg *{stroke:#fff}
 .hm-rail .hm-ri svg [fill]:not([fill="none"]){fill:#fff}
-.hm-cpi{background:linear-gradient(160deg,#34d399 0%,#10b981 45%,#0e7490 100%)!important}
-.hm-rail .hm-ri[data-pk="music"]{background:linear-gradient(160deg,#ff6fb1,#e0187a)!important}
-.hm-rail .hm-ri[data-pk="phone"]{background:linear-gradient(160deg,#6be26b,#1f9d3a)!important}
-.hm-rail .hm-ri[data-pk="nav"]{background:linear-gradient(160deg,#5aa9ff,#1752e0)!important}
-.hm-rail .hm-menu{background:linear-gradient(160deg,#a78bfa,#6d28d9)!important}
+.hm-cpi{background:linear-gradient(160deg,#9cff3a 0%,#4cd964 55%,#1fb84a 100%)!important}
+.hm-cpi.has-ic{background:transparent!important;box-shadow:none!important;padding:0;overflow:hidden}
+.hm-cpi img{width:100%;height:100%;display:block;border-radius:inherit;object-fit:cover}
+.hm-rail .hm-ri[data-pk="music"]{background:linear-gradient(160deg,#ff5f8f,#ff1f5a)!important}
+.hm-rail .hm-ri[data-pk="phone"]{background:linear-gradient(160deg,#6dff6d,#22c55e)!important}
+.hm-rail .hm-ri[data-pk="nav"]{background:linear-gradient(160deg,#4fc3ff,#0a6cff)!important}
+.hm-rail .hm-menu{background:linear-gradient(160deg,#c084fc,#7c3aed)!important}
 /* raccourcis du bas : pastille de couleur derrière chaque icône */
 .hm-bt .hm-b svg{box-sizing:border-box;width:32px;height:32px;padding:6px;border-radius:10px;margin-right:8px!important;stroke:#fff!important;stroke-width:2.1;box-shadow:0 4px 10px rgba(0,0,0,.3)}
-.hm-bt .hm-b[data-go="cons"] svg{background:linear-gradient(160deg,#ffb340,#ff7a00)}
-.hm-bt .hm-b[data-go="revision"] svg{background:linear-gradient(160deg,#7aa2ff,#4f46e5)}
-.hm-bt .hm-b[data-go="trips"] svg{background:linear-gradient(160deg,#4ade80,#16a34a)}
-.hm-bt #hm-iph svg{background:linear-gradient(160deg,#5ac8fa,#0a84ff)}
+.hm-bt .hm-b[data-go="cons"] svg{background:linear-gradient(160deg,#ffc53d,#ff7a00)}
+.hm-bt .hm-b[data-go="revision"] svg{background:linear-gradient(160deg,#8b9dff,#5b4bff)}
+.hm-bt .hm-b[data-go="trips"] svg{background:linear-gradient(160deg,#6dff6d,#22c55e)}
+.hm-bt #hm-iph svg{background:linear-gradient(160deg,#4fc3ff,#0a6cff)}
 /* bandeau du haut */
 #hb-cool-c svg{stroke:#ff6b5a}
 #hb-volt-c svg{stroke:#ffd60a}
@@ -5532,6 +5534,16 @@ function pickPkg(cb){
   });
   m.hidden=false;
 }
+/* le bouton CarPlay prend l'icône de l'appli CarPlay installée sur l'autoradio (celle réglée dans Téléphone) */
+var CPIC=null;
+function cpIcon(){
+  var b=$('#hm-cp');if(!b)return;var pkg=settings.pkgCarplay||'';
+  if(!pkg||!(window.AndroidApp&&window.AndroidApp.icon)){if(b.classList.contains('has-ic')){b.classList.remove('has-ic');b.innerHTML=b._svg||b.innerHTML}return}
+  if(CPIC&&CPIC.p===pkg)return;
+  var d='';try{d=window.AndroidApp.icon(pkg)||''}catch(e){}
+  CPIC={p:pkg,d:d};if(!b._svg)b._svg=b.innerHTML;
+  if(d){b.innerHTML='<img alt="" src="data:image/png;base64,'+d+'">';b.classList.add('has-ic')}else{b.innerHTML=b._svg;b.classList.remove('has-ic')}
+}
 function openCarplay(){
   var p=settings.pkgCarplay;
   if(!p||!/^[a-zA-Z][\w]*(\.[\w]+)+$/.test(p)){
@@ -5544,6 +5556,7 @@ function openCarplay(){
 }
 function wireCarplay(){
   $('#hm-cp').addEventListener('click',openCarplay);
+  cpIcon();setInterval(cpIcon,5000);
   $('#hm-swipe').addEventListener('click',openCarplay);
   $('#pk-close').addEventListener('click',function(){$('#pk-modal').hidden=true});
   var hv=$('#view-home'),sx=0,sy=0,st=0,on=false;
