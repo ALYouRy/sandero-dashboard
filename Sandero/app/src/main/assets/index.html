@@ -6000,7 +6000,8 @@ function finalizeTrip(r,recovered){
   }
   trips.unshift(r);if(trips.length>(FST?3000:500))trips.length=FST?3000:500;
   if(trk&&trk.length>=2)trkSave(r.id,trk);
-  if(trk&&trk.length>=3&&!r.demo&&settings.mmOn!==false)setTimeout(function(){mmTrip(r.id)},300);
+  var mmWait=!!(trk&&trk.length>=3&&!r.demo&&settings.mmOn!==false);
+  if(mmWait){var W=MMW[r.id]={w:true,ts:false};var mmEnd=function(){if(!W.w)return;W.w=false;delete MMW[r.id];if(W.ts)tsShow(r)};setTimeout(function(){mmTrip(r.id,mmEnd)},100);setTimeout(mmEnd,5000)}
   var fv=favOf(r);if(fv){r.fav=fv.id;if(!fv.a&&r.a&&r.b){fv.a=r.a;fv.b=r.b;favSave()}}
   tripsSave();
   if(settings.islandAuto){
@@ -6011,7 +6012,8 @@ function finalizeTrip(r,recovered){
   if(currentView==='trips')tripsBuild();
   if(!recovered&&!r.demo){revAddKm(r.dist);setTimeout(function(){bkAuto(10*60000)},3000);setTimeout(consAlertCheck,9000)}
   GHOST={rid:null};
-  if(!recovered&&(!r.demo||currentView!=='car'))setTimeout(function(){tsShow(r)},400);
+  /* le récap (et ses QR codes) attend que le tracé soit posé sur les routes, 5 s au plus */
+  if(!recovered&&(!r.demo||currentView!=='car')){if(MMW[r.id])MMW[r.id].ts=true;else setTimeout(function(){tsShow(r)},400)}
   if(!recovered)iphPromptEnd();
   return true;
 }
@@ -7046,7 +7048,7 @@ var IPHSYNC='sandero-iph-sync',iph={pages:[],i:0,all:false,maxT:0};
 function b36(n){n=Math.round(+n||0);return (n<0?0:n).toString(36)}
 function qEnc(t){return encodeURIComponent(String(t||'')).replace(/\./g,'%2E').replace(/_/g,'%5F').replace(/~/g,'%7E')}
 function iphBase(){var u=String(settings.iphoneUrl||'').trim();if(!u)return '';if(!/^https?:\/\//.test(u))u='https://'+u;u=u.split('#')[0];if(!/\/$/.test(u)&&!/\.[a-z0-9]+$/i.test(u.split('/').pop()))u+='/';return u}
-/* tracé simplifié pour le QR : précision 1e-4° (~10 m), 90 points max par trajet */
+/* tracé simplifié pour le QR : précision 1e-4° (~10 m), 250 points max par trajet */
 function trkSimplify(P,tol){
   if(P.length<3)return P.slice();
   var keep=new Uint8Array(P.length),st=[[0,P.length-1]];keep[0]=keep[P.length-1]=1;
@@ -7056,8 +7058,9 @@ function trkSimplify(P,tol){
   return P.filter(function(_,i){return keep[i]});
 }
 function trkQr(P){
+  /* 4.6 : tracé fidèle à la route (écart ≤ ~10 m) ; on ne simplifie plus fort que si le trajet est très long (250 points max) */
   var Q=P.map(function(p,i){return [Math.round(p[0]/10),Math.round(p[1]/10),i]}),tol=1,S=trkSimplify(Q,tol);
-  while(S.length>70&&tol<40){tol*=1.6;S=trkSimplify(Q,tol)}
+  while(S.length>250&&tol<4){tol*=1.3;S=trkSimplify(Q,tol)}
   var o=[],pl=0,pn=0;S.forEach(function(p){o.push((p[0]-pl).toString(36),(p[1]-pn).toString(36));pl=p[0];pn=p[1]});
   /* détail par point gardé : conso lissée (L/100 x10), vitesse (km/h), écart de temps (s) */
   var SC=mpSmooth(P),C=[],V=[],T=[],hc=false,hv=false,ht=false,pt=0;
@@ -7763,7 +7766,7 @@ function hbLastTrack(){
    on choisit l'enchaînement le plus probable (proche du GPS ET reliable par la route avec une distance cohérente),
    puis le tracé est redessiné en suivant exactement la géométrie des routes entre deux points. */
 var MM={tpl:null,tiles:{},tn:0,busy:false,done:null,live:null};
-var MMKEY='sandero-mm-1';
+var MMKEY='sandero-mm-1',MMW={};
 function mmDone(){if(!MM.done){try{MM.done=JSON.parse(localStorage.getItem(MMKEY)||'{}')}catch(e){MM.done={}}}return MM.done}
 function mmMark(id,v){var d=mmDone();d[id]=v;var k=Object.keys(d);if(k.length>800)k.slice(0,k.length-800).forEach(function(x){delete d[x]});try{localStorage.setItem(MMKEY,JSON.stringify(d))}catch(e){}}
 /* --- lecture des tuiles vectorielles (format Mapbox Vector Tile = protobuf) --- */
@@ -7967,7 +7970,7 @@ function mmTrip(id,cb){
 function mmQueue(){
   if(settings.mmOn===false||MM.busy||rec)return;
   var d=mmDone(),now=Date.now(),lim=now-60*864e5;
-  var L=visTrips().filter(function(r){var v=d[r.id];return !r.demo&&r.t0>lim&&(v==null||(v<0&&now+v>864e5))&&trkAll()[r.id]!=null}).sort(function(a,b){return b.t0-a.t0});
+  var L=visTrips().filter(function(r){var v=d[r.id];return !r.demo&&r.t0>lim&&(v==null||(v<0&&now+v>12e5))&&trkAll()[r.id]!=null}).sort(function(a,b){return b.t0-a.t0});
   if(!L.length)return;
   MM.busy=true;mmTrip(L[0].id,function(){MM.busy=false;setTimeout(mmQueue,4000)});
 }
