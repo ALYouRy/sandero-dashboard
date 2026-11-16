@@ -1294,6 +1294,11 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
 .dock button[data-view="revision"] svg{stroke:#7aa2ff}
 .dock button[aria-current="page"] svg{stroke:currentColor}
 </style>
+<style>
+/* ===== 4.5 : musique ===== */
+.md-rows b{text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.md-rows b.ok{color:var(--good)}.md-rows b.ko{color:var(--warn)}
+</style>
 </head><body>
 
 <div id="drawer" hidden>
@@ -1648,6 +1653,17 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
             </div>
             <p class="msg" id="pl-note"></p>
             <div class="ri-b" style="margin:0 0 14px"><button type="button" class="btn" id="pl-perm" hidden>Autoriser l’accès au Bluetooth</button><a class="btn ghost" href="intent:#Intent;action=android.settings.BLUETOOTH_SETTINGS;end">Réglages Bluetooth</a></div>
+          </div>
+          <div class="card" id="md-card">
+            <h2>Diagnostic musique</h2>
+            <div class="pl-rows md-rows">
+              <div><span>Accès au titre en cours</span><b id="md-perm">–</b></div>
+              <div><span>Appli de musique sur l’autoradio</span><b id="md-app">–</b></div>
+              <div><span>Appli CarPlay</span><b id="md-cp">–</b></div>
+              <div><span>Lecture en cours</span><b id="md-now">–</b></div>
+            </div>
+            <p class="msg" id="md-msg"></p>
+            <div class="ri-b"><button type="button" class="btn" id="md-go" hidden></button></div>
           </div>
           <div class="card">
             <h2>1 · Connecter le téléphone en Bluetooth</h2>
@@ -5748,11 +5764,63 @@ function pollMedia(){
   updateMusic();
 }
 function artSet(u){var a=$('#mu-art'),b=$('#mu-artb');if(!a)return;if(u){a.src=u;b.src=u}a.hidden=!u;b.hidden=!u;$('.hm-mi').classList.toggle('has-art',!!u)}
+/* ---------- 4.5 : d'où vient la musique ? ----------
+   La carte Musique ne joue rien elle-même : elle affiche et commande l'appli qui joue sur l'autoradio.
+   On cherche une appli de musique installée ; s'il n'y en a pas, la musique passe par CarPlay (iPhone). */
+var MUS={t:0,src:null,apps:null};
+var MUSRE=/spotify|deezer|youtube\.music|apps\.youtube\.music|amazon\.mp3|amazon\.music|poweramp|videolan\.vlc|soundcloud|tidal|qobuz|com\.syu\.bt|com\.syu\.music|btmusic|bt\.music|\.music\b|musicplayer|radio/i;
+function musApps(){
+  if(MUS.apps&&Date.now()-MUS.t<300000)return MUS.apps;
+  var L=[];try{L=JSON.parse(window.AndroidApp.apps())}catch(e){}
+  MUS.apps=L;MUS.t=Date.now();return L;
+}
+function musSrc(){
+  if(!(window.AndroidApp&&window.AndroidApp.apps))return {k:'web'};
+  var L=musApps(),has=function(p){return p&&L.some(function(a){return a.p===p})},name=function(p){var a=L.filter(function(x){return x.p===p})[0];return a?a.n:p};
+  var cp=settings.pkgCarplay;
+  if(has(settings.pkgBtMusic))return {k:'app',p:settings.pkgBtMusic,n:name(settings.pkgBtMusic)};
+  if(has(settings.pkgMusic))return {k:'app',p:settings.pkgMusic,n:name(settings.pkgMusic)};
+  var f=L.filter(function(a){return MUSRE.test(a.p)&&a.p!==cp&&!/setting|réglage/i.test(a.p+a.n)})[0];
+  if(f)return {k:'app',p:f.p,n:f.n};
+  if(cp&&has(cp))return {k:'carplay',p:cp,n:name(cp)};
+  return {k:'none'};
+}
+function musWire(){
+  MUS.src=musSrc();
+  $$('[data-pk="music"]').forEach(function(a){
+    if(MUS.src.k==='app')a.href='intent://#Intent;package='+MUS.src.p+';end';
+    else a.href='#';
+  });
+}
+function musOpen(e){
+  var s=MUS.src||{k:'web'};
+  if(s.k==='carplay'){if(e)e.preventDefault();openCarplay();return true}
+  if(s.k==='none'){if(e)e.preventDefault();showView('phone');setTimeout(function(){var c=$('#md-card');if(c)c.scrollIntoView({block:'center'})},200);return true}
+  return false;
+}
+function musDiag(){
+  if(!$('#md-card'))return;
+  var nat=nativeMedia();if(nat)musWire();var s=MUS.src||{k:'web'},L=nat?musApps():[];
+  var set=function(id,t,ok){var e=$('#'+id);e.textContent=t;e.className=ok==null?'':ok?'ok':'ko'};
+  if(!nat){set('md-perm','–');set('md-app','–');set('md-cp','–');set('md-now','–');setTx('md-msg','Le diagnostic fonctionne dans l’appli installée sur l’autoradio.');$('#md-go').hidden=true;return}
+  set('md-perm',media.perm?'À autoriser':'OK',!media.perm);
+  set('md-app',s.k==='app'?s.n:'Aucune',s.k==='app');
+  var cp=settings.pkgCarplay,cpn=cp?(L.filter(function(a){return a.p===cp})[0]||{n:cp}).n:'';
+  set('md-cp',cp?cpn:'Pas choisie',!!cp);
+  set('md-now',media.t?(media.t+(media.a?' · '+media.a:'')):'Rien',!!media.t);
+  var b=$('#md-go'),msg='';b.hidden=false;
+  if(media.perm){msg='Android doit autoriser La Mathias à lire le titre en cours.';b.textContent='Autoriser l’accès au titre';b.onclick=function(){location.href='intent:#Intent;action=android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS;end'}}
+  else if(s.k==='none'&&!cp){msg='Aucune appli de musique sur l’autoradio, et pas d’appli CarPlay choisie. Si ta musique passe par CarPlay, choisis l’appli CarPlay : la carte Musique l’ouvrira.';b.textContent='Choisir l’appli CarPlay';b.onclick=function(){$('#ph-cp-pick').click()}}
+  else if(s.k==='carplay'){msg='Ta musique passe par CarPlay : la carte Musique ouvre CarPlay. Le titre et les touches marchent si l’appli CarPlay les partage avec Android'+(media.t?' (c’est le cas).':' ; sinon, commande la musique depuis CarPlay.');b.hidden=true}
+  else if(s.k==='app'){msg='La carte Musique ouvre '+s.n+' et affiche le titre de ce qui joue.';b.hidden=true}
+  setTx('md-msg',msg);
+}
 function updateMusic(){
   var nat=nativeMedia();
   var T=$('#mu-t'),S=$('#mu-s');if(!T)return;
   if(nat&&media.t){T.textContent=media.t;S.textContent=media.a||(media.p?'Lecture en cours':'En pause')}
-  else{T.textContent='Musique';S.textContent=nat&&media.perm?'Autorise l’accès au titre dans Téléphone':'Touche pour ouvrir ton lecteur'}
+  else{T.textContent='Musique';var ms=MUS.src||{};S.textContent=nat&&media.perm?'Autorise l’accès au titre dans Téléphone':ms.k==='carplay'?'Ta musique passe par CarPlay · touche pour l’ouvrir':ms.k==='none'?'Aucune appli de musique · touche pour voir':ms.k==='app'?'Touche pour ouvrir '+ms.n:'Touche pour ouvrir ton lecteur'}
+  musDiag();
   $('#mu-prev').hidden=!nat;$('#mu-next').hidden=!nat;
   $('#mu-ico').innerHTML=media.p&&nat?'<path d="M9 6v16M19 6v16" stroke="#fff" stroke-width="4" stroke-linecap="round"/>':'<path d="M9 6l13 8-13 8z" fill="#fff" stroke="none"/>';
   var pt=$('#ph-t');
@@ -5769,7 +5837,9 @@ function updatePhone(){
 function wirePhone(){
   $('#mu-prev').addEventListener('click',function(){mediaKey(88)});
   $('#mu-next').addEventListener('click',function(){mediaKey(87)});
-  $('#mu-play').addEventListener('click',function(e){if(nativeMedia()){e.preventDefault();mediaKey(85)}});
+  $('#mu-play').addEventListener('click',function(e){if(nativeMedia()&&media.t){e.preventDefault();mediaKey(85);return}if(musOpen(e))return;if(nativeMedia()){e.preventDefault();mediaKey(85)}});
+  $$('[data-pk="music"]').forEach(function(a){if(a.id!=='mu-play')a.addEventListener('click',function(e){musOpen(e)})});
+  musWire();setInterval(musWire,60000);
   $('#mu-phone').addEventListener('click',function(){showView('phone')});
   $('#ph-prev').addEventListener('click',function(){mediaKey(88)});
   $('#ph-next').addEventListener('click',function(){mediaKey(87)});
@@ -7555,6 +7625,7 @@ function applyAll(){
   /* raccourcis applications */
   var pk={nav:settings.pkgNav,music:settings.pkgBtMusic||settings.pkgMusic,phone:settings.pkgPhone};
   $$('[data-pk]').forEach(function(a){var p=pk[a.getAttribute('data-pk')];if(p&&/^[a-zA-Z][\w]*(\.[\w]+)+$/.test(p))a.href='intent://#Intent;package='+p+';end'});
+  try{musWire()}catch(e){}
   /* moteur 2D / 3D */
   if(settings.force2d){GL3.ok=false}else if(GL3.gl){GL3.ok=true}else if(GL3.tried&&!GL3.gl&&!GL3.loading){GL3.tried=false}
   var cv=$('#car-cv'),gv=$('#car-gl');if(cv&&gv&&GL3.tried){cv.hidden=GL3.ok;gv.hidden=!GL3.ok}
