@@ -2,7 +2,7 @@ name: Build APK
 on:
   workflow_dispatch: {}
   push:
-    branches: [main]
+    branches: [main, 'reserve-*']
 permissions:
   contents: write
 jobs:
@@ -38,5 +38,11 @@ jobs:
           cp Sandero/app/build/outputs/apk/debug/app-debug.apk la-mathias.apk
           python3 -c "import json,sys;print(json.dumps({'code':int(sys.argv[1]),'name':sys.argv[2],'notes':sys.argv[3]},ensure_ascii=False))" "$CODE" "$NAME" "$MSG" > version.json
           cat version.json
-          gh release delete latest --yes --cleanup-tag || true
-          gh release create latest la-mathias.apk version.json --target "$GITHUB_SHA" --title "La Mathias $NAME" --notes "$MSG" --latest
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            gh release delete latest --yes --cleanup-tag || true
+            gh release create latest la-mathias.apk version.json --target "$GITHUB_SHA" --title "La Mathias $NAME" --notes "$MSG" --latest
+          else
+            # version gardée en réserve (branche reserve-x.y) : publiée à part, jamais proposée en mise à jour automatique
+            gh release delete "$GITHUB_REF_NAME" --yes --cleanup-tag || true
+            gh release create "$GITHUB_REF_NAME" la-mathias.apk version.json --target "$GITHUB_SHA" --title "La Mathias $NAME (réserve)" --notes "Version gardée en réserve. $MSG" --latest=false
+          fi
