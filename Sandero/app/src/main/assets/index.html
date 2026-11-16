@@ -1256,6 +1256,42 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
 .hb-gps[data-k="bad"] i{background:#ff5a5a;box-shadow:0 0 8px #ff5a5a}
 .hb-gps em{font-style:normal}
 </style>
+<style>
+/* ===== 4.3 : icônes en couleur ===== */
+.hm-rail .hm-ri{border:0!important;box-shadow:0 6px 16px rgba(0,0,0,.4)!important}
+.hm-rail .hm-ri svg,.hm-rail .hm-ri svg *{stroke:#fff}
+.hm-rail .hm-ri svg [fill]:not([fill="none"]){fill:#fff}
+.hm-cpi{background:linear-gradient(160deg,#34d399 0%,#10b981 45%,#0e7490 100%)!important}
+.hm-rail .hm-ri[data-pk="music"]{background:linear-gradient(160deg,#ff6fb1,#e0187a)!important}
+.hm-rail .hm-ri[data-pk="phone"]{background:linear-gradient(160deg,#6be26b,#1f9d3a)!important}
+.hm-rail .hm-ri[data-pk="nav"]{background:linear-gradient(160deg,#5aa9ff,#1752e0)!important}
+.hm-rail .hm-menu{background:linear-gradient(160deg,#a78bfa,#6d28d9)!important}
+/* raccourcis du bas : pastille de couleur derrière chaque icône */
+.hm-bt .hm-b svg{box-sizing:border-box;width:32px;height:32px;padding:6px;border-radius:10px;margin-right:8px!important;stroke:#fff!important;stroke-width:2.1;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+.hm-bt .hm-b[data-go="cons"] svg{background:linear-gradient(160deg,#ffb340,#ff7a00)}
+.hm-bt .hm-b[data-go="revision"] svg{background:linear-gradient(160deg,#7aa2ff,#4f46e5)}
+.hm-bt .hm-b[data-go="trips"] svg{background:linear-gradient(160deg,#4ade80,#16a34a)}
+.hm-bt #hm-iph svg{background:linear-gradient(160deg,#5ac8fa,#0a84ff)}
+/* bandeau du haut */
+#hb-cool-c svg{stroke:#ff6b5a}
+#hb-volt-c svg{stroke:#ffd60a}
+/* boutons rapides (Conduite, Conso, Diagnostic) */
+.hb-pills button[data-go="drive"]{background:rgba(10,132,255,.22);border-color:rgba(10,132,255,.5)}
+.hb-pills button[data-go="cons"]{background:rgba(255,159,10,.2);border-color:rgba(255,159,10,.5)}
+.hb-pills button[data-go="diag"]{background:rgba(255,69,58,.18);border-color:rgba(255,69,58,.45)}
+/* menu des sections : chaque icône a sa couleur */
+.dock button[data-view="home"] svg{stroke:#0a84ff}
+.dock button[data-view="drive"] svg{stroke:#5ac8fa}
+.dock button[data-view="cons"] svg{stroke:#ff9f0a}
+.dock button[data-view="sensors"] svg{stroke:#bf5af2}
+.dock button[data-view="diag"] svg{stroke:#ff453a}
+.dock button[data-view="conn"] svg{stroke:#64d2ff}
+.dock button[data-view="phone"] svg{stroke:#30d158}
+.dock button[data-view="trips"] svg{stroke:#32d74b}
+.dock button[data-view="settings"] svg{stroke:#a1a1aa}
+.dock button[data-view="revision"] svg{stroke:#7aa2ff}
+.dock button[aria-current="page"] svg{stroke:currentColor}
+</style>
 </head><body>
 
 <div id="drawer" hidden>
@@ -1346,11 +1382,11 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
         <div class="hm-rail">
           <div class="hm-rt0" id="hm-time2">--:--</div>
           <button type="button" class="hm-wf wf-open" id="hm-wf" data-s="off" aria-label="Wi-Fi"><svg viewBox="0 0 24 24" class="wf-ic"><path class="w3" d="M2.5 9a14 14 0 0 1 19 0"/><path class="w2" d="M5.5 12.3a9.5 9.5 0 0 1 13 0"/><path class="w1" d="M8.6 15.5a5 5 0 0 1 6.8 0"/><circle class="w0" cx="12" cy="19" r="1.6"/><path class="wx" d="M4 4l16 16"/></svg></button>
-          <a class="hm-ri" data-pk="nav" href="intent://#Intent;package=com.waze;end" style="background:linear-gradient(160deg,#4aa3ff,#1752e0)" aria-label="Navigation"><svg viewBox="0 0 28 28"><path d="M5 13.5l17-8-8 17-2.2-6.800z" fill="#fff" stroke="none"/></svg></a>
+          <button type="button" class="hm-ri hm-cpi" id="hm-cp" aria-label="CarPlay"><svg viewBox="0 0 28 28"><rect x="4.5" y="6" width="19" height="13" rx="3.2" fill="none" stroke="#fff" stroke-width="2"/><path d="M12 9.2l5 3.300-5 3.300z" fill="#fff" stroke="none"/><path d="M9.500 22.500h9" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button>
           <a class="hm-ri" data-pk="music" href="intent://#Intent;package=com.spotify.music;end" style="background:linear-gradient(160deg,#ff5fa8,#e0187a)" aria-label="Musique"><svg viewBox="0 0 28 28"><path d="M10 20V7l11-2v13"/><circle cx="8" cy="20" r="2.600" fill="#fff"/><circle cx="19" cy="18" r="2.600" fill="#fff"/></svg></a>
           <a class="hm-ri" data-pk="phone" href="intent://#Intent;package=com.google.android.dialer;end" style="background:linear-gradient(160deg,#6be26b,#1f9d3a)" aria-label="Téléphone"><svg viewBox="0 0 28 28"><path d="M7 5l4 1 1 4.500-2.200 1.600a12 12 0 0 0 5.500 5.500l1.600-2.200L22 16l1 4a2 2 0 0 1-2 2C11 22 5 15 5 7a2 2 0 0 1 2-2z" fill="#fff" stroke="none"/></svg></a>
-          <button type="button" class="hm-ri" id="hm-cp" style="background:linear-gradient(160deg,#3a3a40,#0b0b0e);border:1px solid rgba(255,255,255,.25)" aria-label="CarPlay"><svg viewBox="0 0 28 28"><path d="M9 6.500l13 7.500-13 7.500z" fill="#fff" stroke="none"/></svg></button>
-          <button type="button" class="hm-ri hm-menu" id="hm-menu" aria-label="Menu"><svg viewBox="0 0 28 28"><rect x="5" y="5" width="7" height="7" rx="2" fill="#fff" stroke="none"/><rect x="16" y="5" width="7" height="7" rx="2" fill="#fff" stroke="none"/><rect x="5" y="16" width="7" height="7" rx="2" fill="#fff" stroke="none"/><rect x="16" y="16" width="7" height="7" rx="2" fill="#fff" stroke="none"/></svg></button>
+          <a class="hm-ri" data-pk="nav" href="intent://#Intent;package=com.waze;end" style="background:linear-gradient(160deg,#5aa9ff,#1752e0)" aria-label="Navigation"><svg viewBox="0 0 28 28"><path d="M5 13.5l17-8-8 17-2.2-6.800z" fill="#fff" stroke="none"/></svg></a>
+          <button type="button" class="hm-ri hm-menu" id="hm-menu" style="background:linear-gradient(160deg,#a78bfa,#6d28d9)" aria-label="Menu"><svg viewBox="0 0 28 28"><rect x="5" y="5" width="7" height="7" rx="2" fill="#fff" stroke="none"/><rect x="16" y="5" width="7" height="7" rx="2" fill="#fff" stroke="none"/><rect x="5" y="16" width="7" height="7" rx="2" fill="#fff" stroke="none"/><rect x="16" y="16" width="7" height="7" rx="2" fill="#fff" stroke="none"/></svg></button>
         </div>
         <div class="hm-swipe" id="hm-swipe" title="Glisse vers la gauche pour CarPlay"></div>
         <div class="hm-mid">
