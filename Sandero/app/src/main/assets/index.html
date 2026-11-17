@@ -1299,6 +1299,16 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
 .md-rows b{text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .md-rows b.ok{color:var(--good)}.md-rows b.ko{color:var(--warn)}
 </style>
+<style>
+/* ===== 5.0 : carte plus rapide + fenêtre conso / coût ===== */
+#hb-snap{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:.9}
+#hb-snap.off{display:none}
+.hb-cw{position:absolute;left:12px;bottom:84px;z-index:3;display:flex;flex-direction:column;align-items:flex-start;padding:7px 11px 8px;border-radius:14px;background:rgba(10,12,22,.78);border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 18px rgba(0,0,0,.35);pointer-events:none;min-width:96px}
+.hb-cw b{font-size:24px;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:#fff}
+.hb-cw small{font-size:11px;font-weight:700;color:var(--fg-2);margin-top:2px}
+.hb-cw em{font-style:normal;font-size:12px;font-weight:700;color:#ffd60a;margin-top:5px;max-width:150px;line-height:1.3;white-space:pre-line}
+.hb-cw[data-s="ok"] b{color:#4ade80}.hb-cw[data-s="warn"] b{color:#ffb340}.hb-cw[data-s="bad"] b{color:#ff6b5a}.hb-cw[data-s="cut"] b{color:#5ac8fa}
+</style>
 </head><body>
 
 <div id="drawer" hidden>
@@ -1453,7 +1463,8 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
           <div class="hb-sub"><span><small>Rapport</small><b id="hb-g">–</b></span><span><small>Régime</small><b id="hb-r">–</b></span></div>
         </div>
         <a class="gl hb-map" data-pk="nav" href="intent://#Intent;package=com.waze;end" aria-label="Ouvrir la navigation">
-          <div id="hb-gl"></div><canvas id="hb-cv"></canvas>
+          <img id="hb-snap" alt="" hidden><div id="hb-gl"></div><canvas id="hb-cv"></canvas>
+          <div class="hb-cw" id="hb-cw" hidden><b id="hb-cwv">–</b><small id="hb-cwu"></small><em id="hb-cwc"></em></div>
           <div class="hb-mo"><b id="hb-mt">–</b><small id="hb-ms">Touche pour ouvrir la navigation</small></div>
           <span class="hb-mlab" id="hb-ml">Trajet en cours</span>
           <div id="island" class="isl" data-m="compact" hidden>
@@ -7496,6 +7507,7 @@ var SCHEMA=[
   {k:'navNorth',l:'Carte de l’accueil en roulant',h:'Sens de la marche : la carte tourne avec la voiture, comme un GPS. Nord en haut : la carte ne tourne pas.',type:'seg',o:[[false,'Sens de la marche'],[true,'Nord en haut']]},
   {k:'mapEngine',l:'Fond de carte',h:'« Simple » utilise des images : moins joli, mais plus léger pour l’autoradio et sans WebGL.',type:'seg',o:[['auto','Détaillé'],['raster','Simple']]},
   {type:'offmap'},
+  {k:'mapAuto',l:'Garder la carte des alentours automatiquement',h:'Avec du Wi-Fi, voiture à l’arrêt : l’autoradio garde tout seul la carte sur 15 km autour de toi (une fois par semaine, ou quand tu changes de coin).',type:'seg',o:boolOpts('Oui','Non')},
   {k:'iphPrompt',l:'À la fin d’un trajet',h:'« QR automatique » : après le résumé du trajet, les codes s’affichent et défilent s’il y a des trajets à envoyer (jamais en roulant, fermeture au bout de 3 min).',type:'seg',o:[['auto','QR automatique'],['btn','Bouton seulement'],['off','Rien']]},
   {k:'iphAuto',l:'Codes qui défilent tout seuls',h:'Le scanner de l’appli iPhone les récupère sans toucher à rien. Bouton ❚❚ pour arrêter.',type:'seg',o:boolOpts()},
   {k:'iphZip',l:'Codes compressés',h:'2 fois moins de codes. L’appli iPhone 2.23 ou plus récente sait les lire.',type:'seg',o:boolOpts()},
@@ -7866,6 +7878,7 @@ function hbUpdate(hs){
   setTx('hb-ds',td.cnt?'Note du jour '+td.score+'/100 · '+td.cnt+' trajet'+(td.cnt>1?'s':''):'Aucun trajet aujourd’hui');
   setTx('hb-s1',rec?fmtDur(rec.dur||0):'À l’arrêt');
   setTx('hb-s2',fmtN(td.km+(rec?rec.dist||0:0),1)+' km');
+  hbCw();
   var now=Date.now();if(HB.dirty||now-HB.t>2500){HB.t=now;HB.dirty=false;hbMap()}
 }
 function hbLastTrack(){
@@ -8120,7 +8133,8 @@ function hbMlStart(){
   var host=$('#hb-gl');HB.mlStyle=mpStyle();
   Promise.all([maplibre(),styleFor(HB.mlStyle)]).then(function(res){
     var m;try{m=new res[0].Map({container:host,style:mlLite(res[1]),center:[5.37,43.296],zoom:12,interactive:false,attributionControl:false,fadeDuration:0,antialias:false,maxZoom:18,pixelRatio:1,maxTileCacheSize:60,renderWorldCopies:false,refreshExpiredTiles:false,crossSourceCollisions:false})}catch(e){return}
-    m.once('load',function(){HB.ml=NV.ml=m;nvLayers();host.classList.add('on');HB.key='';NV.key='';hbMap()});
+    m.once('load',function(){HB.ml=NV.ml=m;nvLayers();host.classList.add('on');HB.key='';NV.key='';hbMap();setTimeout(function(){var i=$('#hb-snap');if(i)i.classList.add('off')},700)});
+    m.on('idle',function(){setTimeout(hbSnapTake,1500)});
     m.on('styledata',function(){if(NV.ml&&!m.getSource('nv-trk'))nvLayers()});
     m.on('error',function(){});
   }).catch(function(){HB.mlTry=false;HB.mlRetry=Date.now()});
@@ -8420,6 +8434,42 @@ function rcShow(r,D){
   clearTimeout(RC.tm);RC.tm=setTimeout(function(){if(!$('#qr-modal').hidden&&m.classList.contains('recap')){m.hidden=true;rcEnd()}},n?180000:60000);
 }
 function rcEnd(){clearTimeout(RC.tm);var m=$('#qr-modal');m.classList.remove('recap','noqr');setTx('qr-title','Envoyer vers l’iPhone');try{updateHome()}catch(e){}}
+/* fenêtre sur la carte : conso instantanée + ce que coûte le trajet en cours */
+function hbCw(){
+  var w=$('#hb-cw');if(!w)return;
+  var on=(mode==='live'||mode==='demo')&&settings.fuel!=='diesel'&&(data.cons!=null||data.lph!=null);
+  if(w.hidden===on)w.hidden=!on;if(!on)return;
+  var price=tripPrice({t0:Date.now()})||settings.fuelPrice||1.85,v,u,st;
+  if(data.cut){v='0';u='pied levé · injection coupée';st='cut'}
+  else if(data.cons!=null){v=nf1(data.cons);u='L/100 en direct';st=data.cons<=6.5?'ok':data.cons<=9?'':data.cons<=13?'warn':'bad'}
+  else{v=nf1(data.lph);u='L/h · à l’arrêt';st=''}
+  setTx('hb-cwv',v);setTx('hb-cwu',u);if(w._s!==st){w._s=st;w.setAttribute('data-s',st)}
+  var c='';
+  if(rec){var cost=(rec.fuel||0)*(fuelS().calib||1)*price;c='Trajet '+nf2(cost)+' €'}
+  if(data.cons!=null&&!data.cut)c+=(c?'\n':'')+nf1(data.cons*price)+' €/100 km';
+  else if(!data.cons&&data.lph!=null&&!data.cut)c+=(c?' · ':'')+nf2(data.lph*price)+' €/h';
+  setTx('hb-cwc',c);
+}
+/* photo de la carte : affichée tout de suite au démarrage, le temps que la vraie carte se charge */
+var SNAPK='sandero-mapsnap';
+function hbSnapShow(){var i=$('#hb-snap');if(!i)return;var d=null;try{d=localStorage.getItem(SNAPK)}catch(e){}if(d){i.src=d;i.hidden=false}}
+function hbSnapTake(){
+  var m=HB.ml;if(!m||Date.now()-(HB.snT||0)<120000||(rec&&(data.speed||0)>5))return;HB.snT=Date.now();
+  m.once('render',function(){try{var c=m.getCanvas(),w=Math.min(480,c.width),h=Math.round(c.height*w/c.width),t=document.createElement('canvas');t.width=w;t.height=h;t.getContext('2d').drawImage(c,0,0,w,h);
+    var d=t.toDataURL('image/jpeg',0.6);if(d.length>2000&&d.length<400000)localStorage.setItem(SNAPK,d)}catch(e){}});
+  try{m.triggerRepaint()}catch(e){}
+}
+/* carte des alentours téléchargée toute seule : Wi-Fi avec internet, voiture à l'arrêt, une fois par semaine ou si tu as changé de coin */
+function mapAutoDl(){
+  if(settings.mapAuto===false||rec||!(window.AndroidApp&&window.AndroidApp.mapDl))return;
+  var w=WF&&WF.st||{};if(!(w.wifi&&w.net))return;
+  var st={};try{st=JSON.parse(window.AndroidApp.mapState())}catch(e){}if(st.run)return;
+  var c=offCenter(),o={};try{o=JSON.parse(localStorage.getItem('sandero-autodl')||'{}')}catch(e){}
+  var moved=o.lat==null||Math.hypot((c[0]-o.lat)*110.5,(c[1]-o.lon)*81)>12;
+  if(!moved&&Date.now()-(o.t||0)<7*864e5)return;
+  var km=15,dl=km/110.574,dn=km/(111.32*Math.cos(c[0]*Math.PI/180));
+  try{if(window.AndroidApp.mapDl(c[0]-dl,c[1]-dn,c[0]+dl,c[1]+dn,14))localStorage.setItem('sandero-autodl',JSON.stringify({t:Date.now(),lat:c[0],lon:c[1]}))}catch(e){}
+}
 var LAYS=[
   {k:'board',n:'Tableau',d:'La carte à droite',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="13" y="17" width="20" height="20" rx="3" fill="#3a4160"/><rect x="36" y="2" width="17" height="13" rx="3" fill="#2a2f40"/><rect x="36" y="17" width="17" height="9" rx="3" fill="#2a2f40"/><rect x="36" y="28" width="17" height="9" rx="3" fill="#2a2f40"/><rect x="13" y="39" width="40" height="9" rx="3" fill="#2a2f40"/><rect x="56" y="2" width="42" height="46" rx="4" fill="ACC"/>'},
   {k:'cockpit',n:'Cockpit',d:'La carte à gauche',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="42" height="46" rx="4" fill="ACC"/><rect x="58" y="2" width="17" height="13" rx="3" fill="#2a2f40"/><rect x="58" y="17" width="17" height="9" rx="3" fill="#2a2f40"/><rect x="58" y="28" width="17" height="9" rx="3" fill="#2a2f40"/><rect x="78" y="2" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="78" y="17" width="20" height="20" rx="3" fill="#3a4160"/><rect x="58" y="39" width="40" height="9" rx="3" fill="#2a2f40"/>'}
@@ -8794,6 +8844,7 @@ function ecoApply(){
 window.onAppVisible=function(v){if(v)setTimeout(updAutoTick,4000);if(v&&(UPD.st==='perm'||UPD.st==='ready'))updUI();var b=!v;if(b===ECO.bg)return;ECO.bg=b;ecoApply();if(!b&&tsPending){var p=tsPending;tsPending=null;if(Date.now()-p.t<30*60000)setTimeout(function(){tsShow(p.r)},600)}};
 if(!String(settings.iphoneUrl||'').trim()){settings.iphoneUrl='https://alyoury.github.io/la-mathias/';saveSettings()}
 /* l'appli iPhone 2.23 lit les codes compressés : on les active */
+try{hbSnapShow()}catch(e){}setTimeout(function(){try{hbMlStart()}catch(e){}},2500);setTimeout(function(){try{mapAutoDl()}catch(e){}},60000);setInterval(function(){try{mapAutoDl()}catch(e){}},300000);
 setTimeout(function(){try{mmQueue()}catch(e){}},30000);setInterval(function(){try{mmQueue()}catch(e){}},180000);
 if(!settings.layMig){settings.layMig=1;settings.homeLay='board';saveSettings();try{applyAll()}catch(e){}}
 if(!settings.zipMig){settings.zipMig=1;settings.iphZip=true;saveSettings()}

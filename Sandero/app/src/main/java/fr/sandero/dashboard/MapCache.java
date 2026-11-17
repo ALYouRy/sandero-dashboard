@@ -67,13 +67,14 @@ public class MapCache {
             String path = u.getPath();
             File f = new File(root(c), key(h, path));
             byte[] b = null;
-            if (live(path)) {
+            /* 5.0 : toujours la copie gardée d'abord (affichage immédiat) ;
+               les styles sont rafraîchis en arrière-plan quand internet répond ; sans internet, on n'attend jamais */
+            if (f.exists()) {
+                b = read(f);
+                if (live(path) && online(c) && f.lastModified() < System.currentTimeMillis() - 6 * 3600 * 1000L) refresh(url, f);
+            } else if (online(c)) {
                 b = fetch(url);
                 if (b != null) save(f, b);
-                else if (f.exists()) b = read(f);
-            } else {
-                if (f.exists()) b = read(f);
-                else { b = fetch(url); if (b != null) save(f, b); }
             }
             if (b == null) {
                 WebResourceResponse r = new WebResourceResponse("text/plain", "utf-8", 404, "Hors ligne", cors(), new ByteArrayInputStream(new byte[0]));
@@ -83,6 +84,27 @@ public class MapCache {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static long onT = 0;
+    private static boolean onV = true;
+    /** internet vraiment disponible ? (réseau validé par Android, résultat gardé 2 s) */
+    static boolean online(Context c) {
+        long now = System.currentTimeMillis();
+        if (now - onT < 2000) return onV;
+        onT = now;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) c.getSystemService(Context.CONNECTIVITY_SERVICE);
+            android.net.Network n = cm.getActiveNetwork();
+            android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            onV = nc != null && nc.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) && nc.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        } catch (Exception e) { onV = true; }
+        return onV;
+    }
+    private static final java.util.Set<String> refreshing = java.util.Collections.synchronizedSet(new java.util.HashSet<String>());
+    static void refresh(final String url, final File f) {
+        if (!refreshing.add(url)) return;
+        new Thread(() -> { try { byte[] b = fetch(url); if (b != null) save(f, b); } finally { refreshing.remove(url); } }).start();
     }
 
     static Map<String, String> cors() {
@@ -96,8 +118,8 @@ public class MapCache {
         HttpURLConnection k = null;
         try {
             k = (HttpURLConnection) new URL(url).openConnection();
-            k.setConnectTimeout(7000);
-            k.setReadTimeout(15000);
+            k.setConnectTimeout(4000);
+            k.setReadTimeout(10000);
             k.setRequestProperty("User-Agent", "LaMathias/1.0 (autoradio)");
             if (k.getResponseCode() != 200) return null;
             InputStream in = k.getInputStream();
