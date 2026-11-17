@@ -1750,7 +1750,7 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
             <button type="button" data-v="obd" aria-pressed="false">Adaptateur OBD-II</button>
           </span>
         </div>
-        <p class="msg" id="conn-msg">Branche l’adaptateur sur la prise OBD de la voiture (sous le volant), mets le contact, puis choisis « Adaptateur OBD-II ». L’adaptateur doit être en Bluetooth LE (4.0). Les ELM327 en Bluetooth classique ne sont pas visibles depuis un navigateur.</p>
+        <p class="msg" id="conn-msg">Branche l’adaptateur sur la prise OBD de la voiture (sous le volant), mets le contact, puis choisis « Adaptateur OBD-II ». L’adaptateur doit être en Bluetooth LE (4.0). Les ELM327 en Bluetooth classique ne sont pas visibles depuis un navigateur.</p><p class="msg" id="conn-rate" hidden></p>
       </div>
 
       <div class="card">
@@ -4312,8 +4312,12 @@ function derive(){
   }
   if(settings.fuel==='diesel'||maf==null){data.lph=null;data.cons=null;return}
   var lph=maf*3600/(14.7*745);
+  /* coupure d'injection : pied levé en roulant, le calculateur n'injecte plus (état 4 + admission presque fermée) */
+  data.cut=mode==='live'&&data.fss===4&&data.rpm>1000&&(data.speed||0)>10&&(data.map==null||data.map<40)&&(data.throttle==null||data.throttle<8);
+  if(data.cut)lph=0;
   data.lph=lph;
   data.cons=(data.speed!=null&&data.speed>8)?lph/data.speed*100:null;
+  if(data.cut&&data.speed>8)data.cons=0;
 }
 var trip={dist:0,time:0,fuel:0};
 function resetTrip(){trip={dist:0,time:0,fuel:0}}
@@ -4405,6 +4409,7 @@ function render(){
   if(currentView==='home')updateHome();
   if(currentView==='trips')updateTripsLive();
   if(currentView==='cons')updateCons();
+  if(currentView==='conn'){var cr=$('#conn-rate');if(cr){cr.hidden=mode!=='live'||!LIVE.rate;if(!cr.hidden)cr.textContent='Conso en direct : mise à jour '+nf1(LIVE.rate)+' fois par seconde ('+Math.round(LIVE.ms)+' ms par tour)'+(LIVE.multi?' · mesures groupées':'')+(LIVE.at2?' · adaptateur en mode rapide':'')}}
   if(currentView==='sensors'&&sparkVer!==histVer){
     sparkVer=histVer;
     Object.keys(refs).forEach(function(key){
@@ -4752,6 +4757,56 @@ async function readSensor(k){
   if(b&&b.length>=d.len){data[k]=d.parse(b);miss[k]=0}
   else{miss[k]=(miss[k]||0)+1}
 }
+/* ---------- 4.7 : conso en direct plus réactive ----------
+   - l'adaptateur répond plus vite (minutage adaptatif « agressif » ATAT2, abandonné s'il perd des réponses) ;
+   - si le calculateur l'accepte, régime + vitesse + débit d'air (ou pression d'admission) sont demandés
+     en UNE seule question au lieu de trois ;
+   - les capteurs secondaires ne sont lus qu'un tour sur deux ;
+   - la conso affichée est recalculée dès que la réponse arrive (sans attendre le prochain rafraîchissement) ;
+   - coupure d'injection (pied levé en roulant) : la conso tombe à 0 tout de suite. */
+var LIVE={rate:0,n:0,t0:0,ms:0,multi:null,at2:false,lr:0};
+function pidLen(pid){if(pid===0x03)return 2;for(var k in DEFS){if(pidNum(k)===pid)return DEFS[k].len}return null}
+function pidKey(pid){if(pid===0x03)return 'fss';for(var k in DEFS){if(pidNum(k)===pid)return k}return null}
+/* réponse à plusieurs mesures : « 41 0C xx xx 0D xx 0B xx » (sur plusieurs lignes « 0: … 1: … » en CAN) */
+function parseMulti(resp,pids){
+  var lines=resp.split(/[\r\n]+/).map(function(l){return l.trim()}).filter(Boolean),hex='';
+  lines.forEach(function(l){var m=l.match(/^[0-9A-F]:\s*(.*)$/i);if(m)hex+=m[1].replace(/[^0-9A-F]/gi,'');else if(!/^[0-9A-F]{3}$/i.test(l.replace(/\s/g,'')))hex+=l.replace(/[^0-9A-F]/gi,'')});
+  hex=hex.toUpperCase();var at=hex.indexOf('41');if(at<0)return null;
+  var b=[];for(var j=at+2;j+1<hex.length;j+=2)b.push(parseInt(hex.substr(j,2),16));
+  var out={},i=0;
+  while(i<b.length){var pid=b[i],len=pidLen(pid);if(len==null||pids.indexOf(pid)<0)break;if(i+1+len>b.length)break;out[pid]=b.slice(i+1,i+1+len);i+=1+len;
+    if(b[i]===0x41)i++}
+  for(var q=0;q<pids.length;q++)if(!out[pids[q]])return null;
+  return out;
+}
+function liveStore(pid,bytes){
+  var k=pidKey(pid);if(!k)return;
+  if(k==='fss'){data.fss=bytes[0];return}
+  var d=DEFS[k];if(bytes.length>=d.len){data[k]=d.parse(bytes);miss[k]=0}
+}
+async function readMulti(pids){
+  var r=await send('01'+pids.map(function(p){return ('0'+p.toString(16)).slice(-2).toUpperCase()}).join(''),ble.isCan?3000:5000);
+  var o=parseMulti(r,pids);if(!o)return false;
+  pids.forEach(function(p){liveStore(p,o[p])});return true;
+}
+async function readFss(){try{var r=await send('0103'+(ble.isCan?'1':''),ble.isCan?3000:5000),b=parseBytes(r,'4103');if(b&&b.length)data.fss=b[0]}catch(e){}}
+/* réglages de vitesse de l'adaptateur, testés au début de chaque connexion */
+async function liveTune(fast,fuelK){
+  LIVE.multi=null;LIVE.at2=false;
+  try{
+    await send('ATAT2',2000);var ok=0;
+    for(var t=0;t<6;t++){var m0=miss[fast[0]]||0;await readSensor(fast[0]);if((miss[fast[0]]||0)===m0)ok++}
+    if(ok>=5){LIVE.at2=true;log('Adaptateur en mode rapide (ATAT2)')}else{await send('ATAT1',2000);log('Mode rapide refusé : réponses perdues, retour au réglage normal')}
+  }catch(e){try{await send('ATAT1',2000)}catch(x){}}
+  if(settings.obdMulti===false)return;
+  var pids=fast.concat(fuelK.filter(function(k){return k!=='iat'})).map(pidNum);
+  if(ble.sup.has(3))pids.push(3);
+  if(pids.length<2)return;
+  var good=0;
+  for(var u=0;u<3;u++){try{if(await readMulti(pids))good++}catch(e){}}
+  if(good===3){LIVE.multi=pids;log('Mesures groupées : '+pids.length+' en une seule question')}
+  else log('Mesures groupées non acceptées par la voiture : une question par mesure');
+}
 async function pollLoop(){
   miss={};
   var gen=ble.gen;
@@ -4762,22 +4817,31 @@ async function pollLoop(){
   if(fuelK.length===1&&fuelK[0]==='iat')fuelK=[];
   var slow=SLOW_KEYS.filter(function(k){return ble.sup.has(pidNum(k))&&fuelK.indexOf(k)<0});
   var i=0,errors=0,turn=0;
+  try{await liveTune(fast,fuelK)}catch(e){}
+  LIVE.t0=Date.now();LIVE.n=0;var mfail=0;
   while(mode==='live'&&gen===ble.gen&&ble.dev&&ble.dev.gatt.connected){
     try{
-      for(var f=0;f<fast.length;f++)await readSensor(fast[f]);
-      for(var q=0;q<fuelK.length;q++){
-        /* la température d'air varie lentement : un tour sur trois suffit */
-        if(fuelK[q]==='iat'&&turn%3&&data.iat!=null)continue;
-        await readSensor(fuelK[q]);
+      var tt=performance.now(),grouped=false;
+      if(LIVE.multi){grouped=await readMulti(LIVE.multi);if(!grouped&&++mfail>=3){LIVE.multi=null;log('Mesures groupées abandonnées (réponses incomplètes)')}else if(grouped)mfail=0}
+      if(!grouped){
+        for(var f=0;f<fast.length;f++)await readSensor(fast[f]);
+        for(var q=0;q<fuelK.length;q++){if(fuelK[q]==='iat')continue;await readSensor(fuelK[q])}
+        if(ble.sup.has(3)&&turn%2===0)await readFss();
       }
+      /* la température d'air varie lentement : un tour sur trois suffit */
+      if(fuelK.indexOf('iat')>=0&&(turn%3===0||data.iat==null))await readSensor('iat');
       turn++;
+      /* la conso est recalculée et affichée tout de suite */
+      LIVE.n++;LIVE.ms=LIVE.ms?LIVE.ms*0.8+(performance.now()-tt)*0.2:performance.now()-tt;
+      if(Date.now()-LIVE.t0>3000){LIVE.rate=LIVE.n/((Date.now()-LIVE.t0)/1000);LIVE.t0=Date.now();LIVE.n=0}
+      if(!ECO.bg&&Date.now()-lastRender>120)render();
       /* batterie : tension mesurée par l'adaptateur lui-même (marche sur toutes les voitures) */
       if(!ble.sup.has(pidNum('volt'))&&Date.now()-battS.lastRv>(ECO.bg?60000:20000)){
         battS.lastRv=Date.now();
         try{var rv=await send('ATRV',2500),vv=parseFloat(String(rv).replace(',','.').replace(/[^0-9.]/g,''));if(vv>6&&vv<20){data.volt=vv;battNote(vv)}}catch(e){}
       }else if(ble.sup.has(pidNum('volt'))&&data.volt!=null&&Date.now()-battS.lastRv>20000){battS.lastRv=Date.now();battNote(data.volt)}
-      /* capteurs secondaires : 1 par tour (1 tous les 3 tours en arrière-plan) */
-      if(slow.length&&(!ECO.bg||turn%3===0)){await readSensor(slow[i%slow.length]);i++}
+      /* capteurs secondaires : 1 tour sur 2 (1 sur 6 en arrière-plan) */
+      if(slow.length&&turn%(ECO.bg?6:2)===0){await readSensor(slow[i%slow.length]);i++}
       errors=0;
       /* mode économie : moins de questions à l'adaptateur quand l'écran n'est pas regardé */
       if(ECO.bg)await sleep(400);else if(document.body.classList.contains('panel'))await sleep(150);
