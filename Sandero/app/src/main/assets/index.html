@@ -1529,7 +1529,7 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
               <button type="button" data-v="lph" aria-pressed="false">L/h</button>
             </span>
           </div>
-          <p class="msg" id="cb-note"></p>
+          <p class="msg" id="cb-note"></p><p class="msg cs-diag" id="cs-diag" hidden></p>
         </div>
         <div class="cons-side">
           <div class="tile"><div class="t-head"><span class="t-label">Instantanée</span></div><div class="t-val"><b class="num" id="cs-lph">–</b><span class="unit" id="cs-lph-u">L/100</span></div></div>
@@ -4304,20 +4304,47 @@ function updateGauge(){
 }
 
 /* ---------- Calculs dérivés et trajet ---------- */
+/* 4.8 : estimation de la conso
+   1) air aspiré (débit d'air, ou régime × pression d'admission × température, 1.2 16V D4F) ;
+   2) essence = air / 14,7, corrigée par les ajustements de mélange du calculateur (sonde lambda) ;
+   3) coupure d'injection pied levé : état d'injection de la voiture, ou à défaut admission bien plus vide qu'au ralenti,
+      avec la pédale à sa position de repos apprise sur TA voiture ;
+   4) affichage corrigé avec tes pleins (la valeur brute sert aux trajets, corrigés ensuite de la même façon). */
+var CUTL=(function(){try{return JSON.parse(localStorage.getItem('sandero-cut-1')||'{}')}catch(e){return {}}})();
+function cutLearn(){
+  var r=data.rpm,v=data.speed||0;if(mode!=='live'||r==null)return;
+  /* au ralenti, voiture arrêtée, moteur chaud : position de pédale « repos » et pression d'admission de référence */
+  if(r>550&&r<1150&&v<2){
+    if(data.throttle!=null)CUTL.t=CUTL.t==null?data.throttle:Math.min(CUTL.t+0.02,CUTL.t*0.97+data.throttle*0.03);
+    if(data.throttle!=null&&data.throttle<CUTL.t)CUTL.t=data.throttle;
+    if(data.map!=null&&(data.coolant==null||data.coolant>60))CUTL.m=CUTL.m==null?data.map:CUTL.m*0.97+data.map*0.03;
+    var now=Date.now();if(!CUTL.s||now-CUTL.s>30000){CUTL.s=now;try{localStorage.setItem('sandero-cut-1',JSON.stringify({t:CUTL.t,m:CUTL.m}))}catch(e){}}
+  }
+}
 function derive(){
   var maf=data.maf;
   if(maf==null&&data.map!=null&&data.rpm!=null&&data.iat!=null){
     var imap=data.rpm*data.map/(data.iat+273.15)/2;
     maf=imap/60*0.85*settings.disp*28.97/8.314;
   }
-  if(settings.fuel==='diesel'||maf==null){data.lph=null;data.cons=null;return}
+  if(settings.fuel==='diesel'||maf==null){data.lph=data.lphRaw=null;data.cons=null;data.cut=false;return}
+  cutLearn();
   var lph=maf*3600/(14.7*745);
-  /* coupure d'injection : pied levé en roulant, le calculateur n'injecte plus (état 4 + admission presque fermée) */
-  data.cut=mode==='live'&&data.fss===4&&data.rpm>1000&&(data.speed||0)>10&&(data.map==null||data.map<40)&&(data.throttle==null||data.throttle<8);
+  /* ajustements de mélange (court + long terme), seulement quand le calculateur régule avec la sonde */
+  if(data.fss!==4&&data.fss!==1){var tr=(data.stft||0)+(data.ltft||0);if(data.stft!=null||data.ltft!=null)lph*=clamp(1+tr/100,0.75,1.25)}
+  /* coupure d'injection */
+  var r=data.rpm||0,v=data.speed||0;
+  var rest=data.throttle==null||(CUTL.t!=null?data.throttle<=CUTL.t+2.5:data.throttle<20);
+  var lowAir=data.map!=null&&(CUTL.m!=null?data.map<CUTL.m*0.82:data.map<26);
+  /* admission franchement plus vide qu'au ralenti : coupure même si la voiture se dit « régulée » (état parfois figé) */
+  var veryLow=data.map!=null&&CUTL.m!=null&&data.map<CUTL.m*0.75&&r>1300;
+  data.cutWhy=data.fss===4?'état':(lowAir&&data.fss!==2)||veryLow?'air':'';
+  data.cut=mode==='live'&&r>1150&&v>10&&rest&&(data.fss===4||(lowAir&&data.fss!==2)||veryLow);
   if(data.cut)lph=0;
-  data.lph=lph;
-  data.cons=(data.speed!=null&&data.speed>8)?lph/data.speed*100:null;
-  if(data.cut&&data.speed>8)data.cons=0;
+  data.lphRaw=lph;
+  var k=clamp((fuelS().calib||1),0.6,1.6);data.calK=k;
+  data.lph=lph*k;
+  data.cons=(data.speed!=null&&data.speed>8)?data.lph/data.speed*100:null;
 }
 var trip={dist:0,time:0,fuel:0};
 function resetTrip(){trip={dist:0,time:0,fuel:0}}
@@ -4325,7 +4352,7 @@ function tripStep(dt){
   if(data.rpm==null||data.rpm<200)return;
   trip.time+=dt;
   if(data.speed!=null)trip.dist+=data.speed*dt/3600;
-  if(data.lph!=null)trip.fuel+=data.lph*dt/3600;
+  if(data.lphRaw!=null)trip.fuel+=data.lphRaw*dt/3600;
 }
 function fmtDur(s){
   if(s<3600)return Math.floor(s/60)+' min';
@@ -4801,6 +4828,7 @@ async function liveTune(fast,fuelK){
   if(settings.obdMulti===false)return;
   var pids=fast.concat(fuelK.filter(function(k){return k!=='iat'})).map(pidNum);
   if(ble.sup.has(3))pids.push(3);
+  if(ble.sup.has(0x11))pids.push(0x11);
   if(pids.length<2)return;
   var good=0;
   for(var u=0;u<3;u++){try{if(await readMulti(pids))good++}catch(e){}}
@@ -4827,6 +4855,7 @@ async function pollLoop(){
         for(var f=0;f<fast.length;f++)await readSensor(fast[f]);
         for(var q=0;q<fuelK.length;q++){if(fuelK[q]==='iat')continue;await readSensor(fuelK[q])}
         if(ble.sup.has(3)&&turn%2===0)await readFss();
+        else if(ble.sup.has(0x11)&&turn%2===1)await readSensor('throttle');
       }
       /* la température d'air varie lentement : un tour sur trois suffit */
       if(fuelK.indexOf('iat')>=0&&(turn%3===0||data.iat==null))await readSensor('iat');
@@ -5002,6 +5031,7 @@ function windowAvg(n){
   a.forEach(function(p){if(p.h!=null)L+=p.h/3600;D+=(p.s||0)/3600});
   return (D>0.02&&L>0)?L/D*100:null;
 }
+function sb36s(v){v=Math.round(v);return (v>0?'+':v<0?'−':'')+Math.abs(v)}
 function updateCons(){
   var diesel=settings.fuel==='diesel';
   var v=null,unit='',state='',label='',note='';
@@ -5010,7 +5040,7 @@ function updateCons(){
     v=data.cons;unit='L/100 km';
     state=v<=6.5?'ok':v<=9?'cold':v<=13?'warn':'bad';
     label=v<=6.5?'Économe':v<=9?'Modérée':v<=13?'Élevée':'Très élevée';
-    note='Valeur estimée à partir du débit d’air. Elle peut différer de la consommation réelle de la voiture.';
+    note=(data.cut?'Pied levé : injection coupée, la voiture ne consomme rien. ':'')+'Estimée à partir de l’air aspiré'+(Math.abs((data.calK||1)-1)>0.02?', corrigée d’après tes pleins ('+(data.calK>1?'+':'−')+Math.round(Math.abs(data.calK-1)*100)+' %)':'')+'.';
   }else if(data.lph!=null){
     v=data.lph;unit='L/h';label='À l’arrêt ou très lent';
     note='En dessous de 8 km/h, la consommation s’affiche en litres par heure.';
@@ -5019,6 +5049,8 @@ function updateCons(){
   setTx('cb-unit',unit);
   var chip=$('#cb-chip');chip.textContent=label;chip.setAttribute('data-state',state);
   setTx('cb-note',note);
+  var dg=$('#cs-diag');if(dg){dg.hidden=mode!=='live';if(mode==='live'){var fs={1:'boucle ouverte (froid)',2:'régulée',4:'boucle ouverte (pied levé / plein gaz)',8:'boucle ouverte (défaut)',16:'régulée (défaut)'};
+    dg.textContent='Ce que la voiture envoie : injection '+(data.fss==null?'(état non transmis)':fs[data.fss]||('état '+data.fss))+' · pédale '+(data.throttle==null?'–':nf1(data.throttle)+' %')+(CUTL.t!=null?' (repos '+nf1(CUTL.t)+' %)':'')+' · admission '+(data.map==null?'–':Math.round(data.map)+' kPa')+(CUTL.m!=null?' (ralenti '+Math.round(CUTL.m)+')':'')+' · mélange '+(data.stft==null&&data.ltft==null?'–':sb36s((data.stft||0)+(data.ltft||0))+' %')+' → '+(data.cut?'coupure détectée ('+(data.cutWhy==='état'?'état injection':'air aspiré')+')':'injection active')}}
   /* instantanée : L/100 km en roulant, L/h à l'arrêt (L/100 km n'a pas de sens à 0 km/h) */
   if(!diesel&&data.cons!=null){setTx('cs-lph',nf1(data.cons));$('#cs-lph-u').textContent='L/100'}
   else if(!diesel&&data.lph!=null){setTx('cs-lph',nf1(data.lph));$('#cs-lph-u').textContent='L/h · arrêt'}
@@ -5965,7 +5997,7 @@ function recTick(dt){
   if(moving){rec.mov+=dt;rec.stop=0}else{rec.idle+=dt;rec.stop+=dt}
   if(rec.pv!=null&&rec.pv>=1&&!moving)rec.stops++;
   rec.dist+=s*dt/3600;
-  if(data.lph!=null)rec.fuel+=data.lph*dt/3600;
+  if(data.lphRaw!=null)rec.fuel+=data.lphRaw*dt/3600;
   if(s>rec.vmax)rec.vmax=s;
   if(data.cons!=null&&data.cons>rec.consMax&&data.cons<60)rec.consMax=data.cons;
   rec.rpmSum+=rpm;rec.rpmN++;
@@ -6849,7 +6881,7 @@ function fuelTick(dt){
   if(mode!=='live'&&mode!=='demo')return;
   if(data.rpm==null||data.rpm<200||settings.fuel==='diesel')return;
   var f=fuelS();
-  if(data.lph!=null)f.used+=data.lph*dt/3600*(f.calib||1);
+  if(data.lphRaw!=null)f.used+=data.lphRaw*dt/3600*(f.calib||1);
   if(data.speed!=null)f.dist+=data.speed*dt/3600;
   if(mode==='live'&&++fuelN%15===0)fuelSave();
 }
