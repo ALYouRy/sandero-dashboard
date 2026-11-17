@@ -1554,6 +1554,11 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
             <div class="fu-form" id="fu-adjf" hidden>
               <label>Niveau actuel d’après la jauge de la voiture</label>
               <div class="ri-b"><span class="seg"><button type="button" data-lv="0.125">Réserve</button><button type="button" data-lv="0.25">1/4</button><button type="button" data-lv="0.5">1/2</button><button type="button" data-lv="0.75">3/4</button><button type="button" data-lv="1">Plein</button></span></div>
+              <label for="fu-lvl" style="margin-top:12px">Ou en litres, si tu connais ce qu’il reste</label>
+              <div class="ri-b"><input class="field" id="fu-lvl" type="number" inputmode="decimal" min="0" max="120" step="0.1" placeholder="ex. 22"><button type="button" class="btn" id="fu-lvok">Valider</button></div>
+              <label style="margin-top:12px">Ou d’après l’ordinateur de bord : autonomie × conso moyenne</label>
+              <div class="ri-b"><input class="field" id="fu-okm" type="number" inputmode="numeric" min="0" max="1500" step="1" placeholder="Autonomie (km), ex. 367"><input class="field" id="fu-ocs" type="number" inputmode="decimal" min="2" max="20" step="0.1" placeholder="Conso moy. (L/100), ex. 5,9"><button type="button" class="btn ghost" id="fu-ocalc">Calculer</button></div>
+              <p class="msg" id="fu-lverr" style="padding:8px 0 0" hidden></p>
             </div>
           </div>
         </div>
@@ -6970,6 +6975,19 @@ function wireFuel(){
     form.hidden=true;
     if(settings.islandAuto)islandEvent('Plein enregistré',isFinite(L)?nf1(L)+' L':'Réservoir plein','✓',3000,'good');
     updateFuel();
+  });
+  /* niveau en litres (tapé, ou calculé avec l'autonomie et la conso moyenne de l'ordinateur de bord) */
+  function setLitres(L){var f=fuelS(),tank=settings.tank||50,m=$('#fu-lverr');
+    if(!isFinite(L)||L<0||L>tank+2){m.textContent='Indique un nombre de litres entre 0 et '+tank+' (contenance du réservoir dans les réglages).';m.hidden=false;return}
+    f.level=clamp(L/tank,0,1);f.used=0;f.dist=0;f.added=0;if(!f.fillT)f.fillT=Date.now();
+    if(f===fuelSt)fuelSave();m.hidden=true;adj.hidden=true;$('#fu-lvl').value='';updateFuel();
+  }
+  $('#fu-lvok').addEventListener('click',function(){setLitres(parseFloat(String($('#fu-lvl').value).replace(',','.')))});
+  $('#fu-ocalc').addEventListener('click',function(){
+    var km=parseFloat(String($('#fu-okm').value).replace(',','.')),cs=parseFloat(String($('#fu-ocs').value).replace(',','.')),m=$('#fu-lverr');
+    if(!(km>=0)||!(cs>=2&&cs<=20)){m.textContent='Indique l’autonomie (km) et la conso moyenne (L/100) affichées par la voiture.';m.hidden=false;return}
+    var L=Math.round(km*cs/100*10)/10;$('#fu-lvl').value=String(L);
+    m.textContent='≈ '+nf1(L)+' L (calcul '+km+' km × '+nf1(cs)+' L/100). Touche « Valider » pour l’enregistrer.';m.hidden=false;
   });
   $$('#fu-adjf [data-lv]').forEach(function(b){b.addEventListener('click',function(){
     var f=fuelS();f.level=parseFloat(b.getAttribute('data-lv'));f.used=0;f.dist=0;f.added=0;if(!f.fillT)f.fillT=Date.now();
