@@ -8445,9 +8445,8 @@ function hbCw(){
   else{v=nf1(data.lph);u='L/h · à l’arrêt';st=''}
   setTx('hb-cwv',v);setTx('hb-cwu',u);if(w._s!==st){w._s=st;w.setAttribute('data-s',st)}
   var c='';
-  if(rec){var cost=(rec.fuel||0)*(fuelS().calib||1)*price;c='Trajet '+nf2(cost)+' €'}
-  if(data.cons!=null&&!data.cut)c+=(c?'\n':'')+nf1(data.cons*price)+' €/100 km';
-  else if(!data.cons&&data.lph!=null&&!data.cut)c+=(c?' · ':'')+nf2(data.lph*price)+' €/h';
+  /* trajet en cours : ce qu'il coûte et les km parcourus */
+  if(rec){var cost=(rec.fuel||0)*(fuelS().calib||1)*price;c='Trajet '+nf2(cost)+' €\n'+fmtN(rec.dist||0,1)+' km parcourus'}
   setTx('hb-cwc',c);
 }
 /* photo de la carte : affichée tout de suite au démarrage, le temps que la vraie carte se charge */
