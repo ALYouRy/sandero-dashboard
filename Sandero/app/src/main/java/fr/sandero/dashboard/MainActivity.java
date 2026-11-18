@@ -559,6 +559,18 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void wifiAuto(String ssid, String pwd, boolean on) { wifi.setAuto(ssid, pwd, on); }
 
+        /* écran au maximum de luminosité pendant l'affichage des QR codes (plus faciles à scanner) */
+        @JavascriptInterface
+        public void brightMax(final boolean on) {
+            runOnUiThread(() -> {
+                try {
+                    android.view.WindowManager.LayoutParams lp = getWindow().getAttributes();
+                    lp.screenBrightness = on ? 1f : android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+                    getWindow().setAttributes(lp);
+                } catch (Exception ignored) { }
+            });
+        }
+
         /* carte hors ligne */
         @JavascriptInterface
         public boolean mapDl(double la0, double lo0, double la1, double lo1, int zmax) { return MapCache.download(MainActivity.this, la0, lo0, la1, lo1, zmax); }
