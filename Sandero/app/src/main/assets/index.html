@@ -1309,6 +1309,15 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
 .hb-cw em{font-style:normal;font-size:12px;font-weight:700;color:#ffd60a;margin-top:5px;max-width:150px;line-height:1.3;white-space:pre-line}
 .hb-cw[data-s="ok"] b{color:#4ade80}.hb-cw[data-s="warn"] b{color:#ffb340}.hb-cw[data-s="bad"] b{color:#ff6b5a}.hb-cw[data-s="cut"] b{color:#5ac8fa}
 </style>
+<style>
+/* ===== 5.2 : envoi par code court ===== */
+.qr-code{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#fff;border-radius:16px;color:#111;text-align:center;padding:14px}
+.qr-box{position:relative}
+.qr-code small{font-size:14px;font-weight:700;color:#555}
+.qr-code b{font-size:clamp(40px,9vh,64px);font-weight:800;letter-spacing:.08em;font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas,monospace}
+.qr-code em{font-style:normal;font-size:13.5px;color:#444;line-height:1.4;max-width:300px}
+#qr-modal.coded .qr-pg,#qr-modal.coded .qr-step,#qr-modal.coded #qr-info{display:none}
+</style>
 </head><body>
 
 <div id="drawer" hidden>
@@ -1830,12 +1839,12 @@ body[data-lay="board"] .hm-wf,body[data-lay="cockpit"] .hm-wf{display:none}
       <div class="rc-info" id="rc-info"></div>
     </div>
     <div class="qr-body">
-      <div class="qr-box"><canvas id="qr-cv" width="360" height="360"></canvas><div class="qr-empty" id="qr-empty" hidden></div></div>
+      <div class="qr-box"><canvas id="qr-cv" width="360" height="360"></canvas><div class="qr-empty" id="qr-empty" hidden></div><div class="qr-code" id="qr-code" hidden><small>Code à taper sur l’iPhone</small><b id="qr-code-v">…</b><em id="qr-code-s"></em></div></div>
       <div class="qr-side">
         <p class="qr-step">Dans l’appli <b>La Mathias</b> de ton iPhone, touche <b>Scanner</b> et vise ce code.</p>
         <div class="qr-pg" id="qr-pg"><button type="button" class="btn ghost" id="qr-prev">‹</button><b id="qr-n">1 / 1</b><button type="button" class="btn ghost" id="qr-next">›</button><button type="button" class="btn ghost" id="qr-play" aria-label="Arrêter le défilement">❚❚</button></div>
         <p class="msg" id="qr-info"></p>
-        <div class="ri-b"><button type="button" class="btn" id="qr-done">J’ai tout scanné</button><button type="button" class="btn ghost" id="qr-all">Tout renvoyer</button></div>
+        <div class="ri-b"><button type="button" class="btn" id="qr-done">J’ai tout scanné</button><button type="button" class="btn ghost" id="qr-codeb">Code</button><button type="button" class="btn ghost" id="qr-all">Tout renvoyer</button></div>
       </div>
     </div>
   </div>
@@ -7318,10 +7327,11 @@ function iphAutoSet(on){
   var b=$('#qr-play');if(b){b.textContent=on?'❚❚':'▶';b.setAttribute('aria-label',on?'Arrêter le défilement':'Faire défiler')}
   if(on&&iph.pages.length>1&&!$('#qr-modal').hidden)IPHAUTO.tm=setInterval(function(){if($('#qr-modal').hidden){iphAutoSet(IPHAUTO.on);return}iph.i=(iph.i+1)%iph.pages.length;iphDraw()},(settings.iphSpeed||1800));
 }
-function iphOpen(all,keep){if(!keep&&$('#qr-modal').classList.contains('recap'))rcEnd();iphBuild(!!all);$('#qr-modal').hidden=false;iphDraw();iphAutoSet(settings.iphAuto!==false)}
+function iphOpen(all,keep){if(!keep&&$('#qr-modal').classList.contains('recap'))rcEnd();iphBuild(!!all);$('#qr-modal').hidden=false;try{qrCodeShow(false);setTx('qr-codeb','Code')}catch(e){}iphDraw();iphAutoSet(settings.iphAuto!==false)}
 function wireIphone(){
   $('#tp-iph').addEventListener('click',function(){iphOpen(false)});
   $('#hm-iph').addEventListener('click',function(){iphOpen(false)});
+  $('#qr-codeb').addEventListener('click',function(){if($('#qr-code').hidden)qrCodeSend();else{qrCodeShow(false);setTx('qr-codeb','Code')}});
   $('#qr-close').addEventListener('click',function(){try{updateHome()}catch(e){}});
   $('#qr-close').addEventListener('click',function(){$('#qr-modal').hidden=true;clearTimeout(IPHP.tm);if($('#qr-modal').classList.contains('recap'))rcEnd()});
   $('#qr-prev').addEventListener('click',function(){iphAutoSet(false);if(iph.i>0){iph.i--;iphDraw()}});
@@ -8468,6 +8478,60 @@ function mapAutoDl(){
   if(!moved&&Date.now()-(o.t||0)<7*864e5)return;
   var km=15,dl=km/110.574,dn=km/(111.32*Math.cos(c[0]*Math.PI/180));
   try{if(window.AndroidApp.mapDl(c[0]-dl,c[1]-dn,c[0]+dl,c[1]+dn,14))localStorage.setItem('sandero-autodl',JSON.stringify({t:Date.now(),lat:c[0],lon:c[1]}))}catch(e){}
+}
+/* ---------- 5.2 : envoi à l'iPhone par code court (6 caractères) ----------
+   Mêmes pages que les QR codes, compressées, chiffrées avec le code et déposées 12 h sur ntfy.sh.
+   Format imposé par l'appli iPhone (2.53) : fonctions reprises telles quelles. Les QR codes restent en secours. */
+function sha256(B){/* B : Uint8Array → Uint8Array(32) */
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],l=B.length,n=((l+9+63)>>6)<<6,M=new Uint8Array(n);M.set(B);M[l]=0x80;
+  var bits=l*8;M[n-4]=(bits>>>24)&255;M[n-3]=(bits>>>16)&255;M[n-2]=(bits>>>8)&255;M[n-1]=bits&255;M[n-5]=Math.floor(bits/4294967296)&255;
+  var W=new Array(64),r=function(x,k){return (x>>>k)|(x<<(32-k))};
+  for(var o=0;o<n;o+=64){for(var i=0;i<16;i++)W[i]=(M[o+4*i]<<24)|(M[o+4*i+1]<<16)|(M[o+4*i+2]<<8)|M[o+4*i+3];
+    for(i=16;i<64;i++){var s0=r(W[i-15],7)^r(W[i-15],18)^(W[i-15]>>>3),s1=r(W[i-2],17)^r(W[i-2],19)^(W[i-2]>>>10);W[i]=(W[i-16]+s0+W[i-7]+s1)|0}
+    var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(i=0;i<64;i++){var S1=r(e,6)^r(e,11)^r(e,25),ch=(e&f)^(~e&g),t1=(h+S1+ch+K[i]+W[i])|0,S0=r(a,2)^r(a,13)^r(a,22),mj=(a&b)^(a&c)^(b&c),t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0}
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0}
+  var out=new Uint8Array(32);for(i=0;i<8;i++){out[4*i]=H[i]>>>24;out[4*i+1]=(H[i]>>>16)&255;out[4*i+2]=(H[i]>>>8)&255;out[4*i+3]=H[i]&255}return out}
+function u8(s){return new TextEncoder().encode(s)}
+function cat8(){var n=0,i;for(i=0;i<arguments.length;i++)n+=arguments[i].length;var o=new Uint8Array(n),p=0;for(i=0;i<arguments.length;i++){o.set(arguments[i],p);p+=arguments[i].length}return o}
+function hex8(B){var s='';for(var i=0;i<B.length;i++)s+=(B[i]<16?'0':'')+B[i].toString(16);return s}
+function b64u(B){var s='';for(var i=0;i<B.length;i++)s+=String.fromCharCode(B[i]);return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function lmTopic(code){return 'lm-'+hex8(sha256(u8('lm-topic|'+code))).slice(0,24)}
+function lmKey(code){return sha256(u8('lm-key|'+code))}
+function lmXor(key,nonce,D){var o=new Uint8Array(D.length);for(var j=0;j*32<D.length;j++){var ks=sha256(cat8(key,nonce,new Uint8Array([j>>>24,(j>>>16)&255,(j>>>8)&255,j&255])));for(var i=0;i<32&&j*32+i<D.length;i++)o[j*32+i]=D[j*32+i]^ks[i]}return o}
+/* envoi : renvoie une promesse avec le code à afficher */
+function lmSend(pages){
+  var A='0123456789ABCDEFGHJKMNPQRSTVWXYZ',r=new Uint8Array(10);crypto.getRandomValues(r);
+  var code='',id='',i;for(i=0;i<6;i++)code+=A[r[i]&31];for(i=6;i<10;i++)id+=A[r[i]&31];
+  var txt='z1'+LZString.compressToEncodedURIComponent(pages.join('\n'));
+  var key=lmKey(code),nonce=new Uint8Array(8);crypto.getRandomValues(nonce);
+  var ct=lmXor(key,nonce,u8(txt)),tag=sha256(cat8(key,nonce,ct)).slice(0,8),blob=b64u(cat8(nonce,ct,tag));
+  var N=Math.ceil(blob.length/3500),url='https://ntfy.sh/'+lmTopic(code),k=0;
+  var next=function(){if(k>=N)return Promise.resolve(code);k++;
+    return fetch(url,{method:'POST',body:'LM1 '+id+' '+k+'/'+N+' '+blob.slice((k-1)*3500,k*3500)}).then(function(res){if(!res.ok)throw new Error('ntfy '+res.status);return next()})};
+  return next();
+}
+/* exemple : lmSend(pagesDesQR).then(function(code){ afficher(code.slice(0,3)+' '+code.slice(3)) }).catch(function(){ proposer les QR codes }) */
+
+var LMC=null;
+function qrCodeShow(on){var m=$('#qr-modal');$('#qr-code').hidden=!on;m.classList.toggle('coded',on);setTx('qr-done',on?'C’est importé':'J’ai tout scanné');if(on)iphAutoSet(false)}
+function qrCodeSend(){
+  var pages=(iph&&iph.pages)||[];if(!pages.length)return;
+  var sig=pages.join('\n'),now=Date.now();
+  qrCodeShow(true);
+  if(LMC&&LMC.sig===sig&&now-LMC.t<11*3600e3){qrCodeOk(LMC.code,LMC.t);return}
+  setTx('qr-code-v','…');setTx('qr-code-s','Envoi en cours…');
+  try{
+    lmSend(pages).then(function(code){LMC={sig:sig,code:code,t:Date.now()};qrCodeOk(code,LMC.t)})
+    .catch(function(){setTx('qr-code-v','—');setTx('qr-code-s','Envoi impossible (pas d’internet ?). Utilise les QR codes : touche « QR codes ».');setTx('qr-codeb','QR codes')});
+  }catch(e){setTx('qr-code-v','—');setTx('qr-code-s','Envoi impossible ici. Utilise les QR codes.');setTx('qr-codeb','QR codes')}
+  setTx('qr-codeb','QR codes');
+}
+function qrCodeOk(code,t){
+  setTx('qr-code-v',code.slice(0,3)+' '+code.slice(3));
+  var h=new Date(t+12*3600e3);
+  setTx('qr-code-s','Dans La Mathias sur l’iPhone, touche « Code » et tape ce code. Valable 12 h (jusqu’à '+fmtHM(h)+'). Une fois importé, touche « C’est importé ».');
 }
 var LAYS=[
   {k:'board',n:'Tableau',d:'La carte à droite',sv:'<rect x="2" y="2" width="8" height="46" rx="2" fill="#2a2f40"/><rect x="13" y="2" width="20" height="13" rx="3" fill="#2a2f40"/><rect x="13" y="17" width="20" height="20" rx="3" fill="#3a4160"/><rect x="36" y="2" width="17" height="13" rx="3" fill="#2a2f40"/><rect x="36" y="17" width="17" height="9" rx="3" fill="#2a2f40"/><rect x="36" y="28" width="17" height="9" rx="3" fill="#2a2f40"/><rect x="13" y="39" width="40" height="9" rx="3" fill="#2a2f40"/><rect x="56" y="2" width="42" height="46" rx="4" fill="ACC"/>'},
