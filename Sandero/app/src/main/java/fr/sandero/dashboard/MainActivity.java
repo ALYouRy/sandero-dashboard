@@ -74,8 +74,8 @@ public class MainActivity extends Activity {
         phone = new PhoneLink(this, web);
         phone.start();
         wifi = new WifiLink(this);
-        geo = new GeoLink(this);
-        geo.start();
+        // 5.4 : plus de GPS (carte retirée, l'appli reste légère pour CarPlay)
+        geo = null;
         if (!phone.hasPerm()) phone.askPerm();
 
         web.setWebViewClient(new WebViewClient() {
@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
         if (req == GeoLink.REQ_PERM) {
-            geo.start();
+            if (geo != null) geo.start();
             web.evaluateJavascript("window.onGeoPerm&&window.onGeoPerm()", null);
             return;
         }
