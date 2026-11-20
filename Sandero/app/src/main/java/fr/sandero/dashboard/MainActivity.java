@@ -53,6 +53,7 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCb;
 
     WifiLink wifi;
+    ConsoBubble bubble;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -74,6 +75,7 @@ public class MainActivity extends Activity {
         phone = new PhoneLink(this, web);
         phone.start();
         wifi = new WifiLink(this);
+        bubble = new ConsoBubble(this);
         // 5.4 : plus de GPS (carte retirée, l'appli reste légère pour CarPlay)
         geo = null;
         if (!phone.hasPerm()) phone.askPerm();
@@ -184,15 +186,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        started = false;
         if (web != null) {
             web.evaluateJavascript("window.onAppVisible&&window.onAppVisible(false)", null);
             web.onPause();
         }
+        // 5.5 : CarPlay devant, plus de recherche Wi-Fi (elle partage la radio avec le Bluetooth et CarPlay sans fil)
+        if (wifi != null) wifi.pause(true);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        started = true;
+        if (bubble != null) bubble.hide();
+        if (wifi != null) wifi.pause(false);
         if (web != null) {
             web.onResume();
             web.evaluateJavascript("window.onAppVisible&&window.onAppVisible(true)", null);
@@ -268,6 +276,9 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> web.evaluateJavascript(fjs, null));
         }).start();
     }
+
+    private volatile boolean started;
+    private boolean isActive() { return started; }
 
     private class AppApi {
         /* ---- stockage des trajets et tracés dans des fichiers (pas de limite de 5 Mo comme le stockage du navigateur) ---- */
@@ -385,6 +396,17 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void setAutoBoot(boolean on) {
             getSharedPreferences(BootReceiver.PREFS, MODE_PRIVATE).edit().putBoolean(BootReceiver.KEY_BOOT, on).apply();
+        }
+
+        /* 5.5 : bulle de conso par-dessus CarPlay */
+        @JavascriptInterface
+        public void bubble(String v, String u, String s, String color) {
+            runOnUiThread(() -> { if (bubble != null && !isActive()) bubble.set(v, u, s, color); });
+        }
+
+        @JavascriptInterface
+        public void bubbleHide() {
+            runOnUiThread(() -> { if (bubble != null) bubble.hide(); });
         }
 
         @JavascriptInterface

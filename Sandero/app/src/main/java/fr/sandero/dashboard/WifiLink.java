@@ -53,9 +53,19 @@ public class WifiLink {
         catch (Exception e) { return false; }
     }
 
+    private boolean paused;
+    /** 5.5 : en pause quand l'appli est derrière CarPlay */
+    void pause(boolean p) {
+        if (p == paused) return;
+        paused = p;
+        h.removeCallbacks(tick);
+        if (!p) h.postDelayed(tick, 3000);
+    }
+
     /** toutes les 15 s (60 s une fois connecté) : si l'autoradio n'est sur aucun Wi-Fi, il cherche le partage de connexion et s'y connecte */
     private final Runnable tick = new Runnable() {
         @Override public void run() {
+            if (paused) return;
             long next = 15000;
             try {
                 String ssid = sp.getString("ssid", "");
