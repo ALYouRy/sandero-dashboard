@@ -60,6 +60,8 @@ public class MainActivity extends Activity {
         super.onCreate(b);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         web = new WebView(this);
+        // 5.6 : la page compte moins pour le système quand elle n'est pas à l'écran
+        if (android.os.Build.VERSION.SDK_INT >= 26) { try { web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true); } catch (Exception ignored) { } }
         web.setBackgroundColor(Color.BLACK);
         setContentView(web);
 
@@ -193,6 +195,7 @@ public class MainActivity extends Activity {
         }
         // 5.5 : CarPlay devant, plus de recherche Wi-Fi (elle partage la radio avec le Bluetooth et CarPlay sans fil)
         if (wifi != null) wifi.pause(true);
+        if (ble != null) ble.lowPower(true);
     }
 
     @Override
@@ -201,6 +204,7 @@ public class MainActivity extends Activity {
         started = true;
         if (bubble != null) bubble.hide();
         if (wifi != null) wifi.pause(false);
+        if (ble != null) ble.lowPower(false);
         if (web != null) {
             web.onResume();
             web.evaluateJavascript("window.onAppVisible&&window.onAppVisible(true)", null);

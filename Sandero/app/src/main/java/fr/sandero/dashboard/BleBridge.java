@@ -52,6 +52,15 @@ public class BleBridge {
 
     /* connexion en cours */
     private BluetoothGatt gatt;
+    /* 5.6 : derrière CarPlay, liaison Bluetooth basse consommation (laisse la radio à la musique) */
+    private volatile boolean lowPow;
+    void lowPower(boolean on) {
+        lowPow = on;
+        BluetoothGatt g = gatt;
+        if (g != null) {
+            try { g.requestConnectionPriority(on ? BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER : BluetoothGatt.CONNECTION_PRIORITY_BALANCED); } catch (Exception ignored) { }
+        }
+    }
     private final ArrayList<BluetoothGattCharacteristic> chars = new ArrayList<BluetoothGattCharacteristic>();
     private BluetoothSocket sock;
     private OutputStream sockOut;
